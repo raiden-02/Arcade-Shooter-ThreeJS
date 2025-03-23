@@ -1,8 +1,9 @@
-// /src/core/Game.ts
 import * as THREE from 'three';
 import { InputManager } from './InputManager';
 import { CameraRig } from '../player/CameraRig';
 import { PlayerController } from '../player/PlayerController';
+import { PhysicsHelper } from './PhysicsHelper';
+import * as RAPIER from '@dimforge/rapier3d';
 
 export class Game {
     private scene: THREE.Scene;
@@ -12,6 +13,8 @@ export class Game {
     private input: InputManager;
     private cameraRig: CameraRig;
     private playerController: PlayerController;
+    private physics: PhysicsHelper;
+    private playerBody: RAPIER.RigidBody;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -27,10 +30,13 @@ export class Game {
         this.cameraRig = new CameraRig(this.camera);
         this.scene.add(this.cameraRig.object);
 
-        this.playerController = new PlayerController(this.cameraRig, this.input);
+        this.physics = new PhysicsHelper();
+        this.playerBody = this.physics.createPlayerBody(new RAPIER.Vector3(0, 2, 0));
+        this.physics.createFloorCollider(new RAPIER.Vector3(0, -0.5, 0), new RAPIER.Vector3(50, 1, 50));
+
+        this.playerController = new PlayerController(this.cameraRig, this.input, this.playerBody);
 
         this.addTestFloor();
-
         window.addEventListener('resize', () => this.onWindowResize());
     }
 
@@ -61,7 +67,15 @@ export class Game {
     private animate = () => {
         requestAnimationFrame(this.animate);
         const delta = this.clock.getDelta();
+
+        this.physics.step(delta);
         this.playerController.update(delta);
+        this.syncGraphicsToPhysics();
         this.renderer.render(this.scene, this.camera);
+    }
+
+    private syncGraphicsToPhysics() {
+        const pos = this.playerBody.translation();
+        this.cameraRig.position.set(pos.x, pos.y, pos.z);
     }
 }

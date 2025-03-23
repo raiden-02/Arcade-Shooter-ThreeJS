@@ -1,17 +1,19 @@
-// /src/player/PlayerController.ts
 import { CameraRig } from './CameraRig';
 import { InputManager } from '../core/InputManager';
 import * as THREE from 'three';
+import * as RAPIER from '@dimforge/rapier3d';
 
 export class PlayerController {
     private rig: CameraRig;
     private input: InputManager;
-    private speed: number = 5; // m/s
+    private body: RAPIER.RigidBody;
+    private speed: number = 5;
     private lookSpeed: number = 0.002;
 
-    constructor(rig: CameraRig, input: InputManager) {
+    constructor(rig: CameraRig, input: InputManager, body: RAPIER.RigidBody) {
         this.rig = rig;
         this.input = input;
+        this.body = body;
         this.lockPointer();
     }
 
@@ -23,24 +25,41 @@ export class PlayerController {
 
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement !== canvas) {
-                // Reset input on unlock
                 this.input.reset();
             }
         });
     }
 
     update(delta: number) {
+
+        delta = delta // Temporary delta use workaround until we start using it
+
         // Mouse look
         const look = this.input.mouseMovement;
         this.rig.rotateYaw(-look.x * this.lookSpeed);
         this.rig.rotatePitch(-look.y * this.lookSpeed);
-
-        // WASD movement
+    
         const dir = this.input.getMovementDirection();
+        const yaw = this.rig.object.rotation.y;
+        const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+        const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    
+        const linearVelocity = this.body.linvel();
+    
         if (dir.lengthSq() > 0) {
             dir.normalize();
-            dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rig.object.rotation.y);
-            this.rig.position.addScaledVector(dir, delta * this.speed);
+            const moveVec = new THREE.Vector3()
+                .addScaledVector(forward, -dir.z)
+                .addScaledVector(right, dir.x)
+                .normalize()
+                .multiplyScalar(this.speed);
+    
+            // Apply only XZ velocity
+            this.body.setLinvel(new RAPIER.Vector3(moveVec.x, linearVelocity.y, moveVec.z), true);
+        } else {
+            // Reset XZ velocity instantly when no input
+            this.body.setLinvel(new RAPIER.Vector3(0, linearVelocity.y, 0), true);
         }
     }
+    
 }
