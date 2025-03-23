@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",                     // Allow top-level await + WASM friendliness
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -18,7 +17,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Extra (optional) */
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]
 }
