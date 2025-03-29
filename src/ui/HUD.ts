@@ -1,10 +1,10 @@
 export class HUD {
-    crosshair: HTMLDivElement;
+  crosshair: HTMLDivElement;
 
-    constructor() {
-        this.crosshair = document.createElement('div');
-        this.crosshair.id = 'crosshair';
-        this.crosshair.style.cssText = `
+  constructor() {
+    this.crosshair = document.createElement('div');
+    this.crosshair.id = 'crosshair';
+    this.crosshair.style.cssText = `
             position: fixed;
             top: 50%;
             left: 50%;
@@ -16,14 +16,14 @@ export class HUD {
             pointer-events: none;
         `;
 
-        document.body.appendChild(this.crosshair);
-    }
+    document.body.appendChild(this.crosshair);
+  }
 
-    show() {
-        this.crosshair.style.display = 'block';
-    }
+  show() {
+    this.crosshair.style.display = 'block';
+  }
 
-    hide() {
-        this.crosshair.style.display = 'none';
-    }
+  hide() {
+    this.crosshair.style.display = 'none';
+  }
 }

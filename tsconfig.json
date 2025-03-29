@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",                     // Allow top-level await + WASM friendliness
+    "target": "ESNext", // Allow top-level await + WASM friendliness
     "useDefineForClassFields": true,
     "module": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
@@ -22,5 +22,6 @@
     /* Extra (optional) */
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

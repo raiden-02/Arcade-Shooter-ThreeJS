@@ -1,0 +1,38 @@
+# Ignore build output
+dist
+build
+out
+
+# Node modules
+node_modules
+
+# Logs
+*.log
+
+# OS/Editor/Tooling
+.DS_Store
+.vscode
+.idea
+
+# Tests snapshots / coverage
+coverage
+*.snap
+
+# Git
+.git
+
+# Environment files
+.env
+.env.*.local
+
+# Images & binaries
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.svg
+*.mp4
+*.zip
+*.tar.gz
