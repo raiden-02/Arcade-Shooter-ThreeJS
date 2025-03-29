@@ -4,6 +4,7 @@ import { InputManager } from './InputManager';
 import { CameraRig } from '../player/CameraRig';
 import { PlayerController } from '../player/PlayerController';
 import { PhysicsHelper } from './PhysicsHelper';
+import { UIManager } from '../ui/UIManager';
 import * as RAPIER from '@dimforge/rapier3d';
 
 export class Game {
@@ -16,6 +17,8 @@ export class Game {
     private playerController: PlayerController;
     private physics: PhysicsHelper;
     private playerBody: RAPIER.RigidBody;
+    private ui: UIManager;
+    private paused = false;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -39,6 +42,40 @@ export class Game {
 
         this.addTestFloor();
         window.addEventListener('resize', () => this.onWindowResize());
+
+        this.ui = new UIManager();
+
+        document.addEventListener('pointerlockchange', () => {
+            const canvas = this.renderer.domElement;
+            if (document.pointerLockElement !== canvas && !this.paused) {
+                this.paused = true;
+                this.ui.showPause();
+            }
+        });
+
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Escape') {
+                if (!this.paused) {
+                    // First ESC: exit pointer lock → handled by pointerlockchange
+                    return;
+                } else {
+                    // Resume
+                    this.paused = false;
+                    this.ui.hidePause();
+                    this.renderer.domElement.requestPointerLock(); // re-enter
+                }
+            }
+        });
+        
+
+        document.addEventListener('unpause', () => {
+            this.paused = false;
+            this.ui.hidePause();
+            this.clock.getDelta(); // reset delta accumulator
+        });
+        
+
     }
 
     private addTestFloor() {
@@ -67,6 +104,12 @@ export class Game {
 
     private animate = () => {
         requestAnimationFrame(this.animate);
+        
+        if (this.paused) {
+            this.clock.getDelta(); // discard delta so it doesn't pile up
+            return;
+        }
+
         const delta = this.clock.getDelta();
 
         this.physics.step(delta);
