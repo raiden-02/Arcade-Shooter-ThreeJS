@@ -31,6 +31,15 @@ export class InputManager {
         return delta;
     }
 
+    isSprinting(): boolean {
+        return this.keys['ShiftLeft'] && this.keys['KeyW'];
+    }
+
+    isJumpPressed(): boolean {
+        return this.keys['Space'];
+    }
+    
+
     reset() {
         this.keys = {};
     }

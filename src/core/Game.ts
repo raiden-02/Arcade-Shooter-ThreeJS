@@ -1,3 +1,4 @@
+// src/core/Game.ts
 import * as THREE from 'three';
 import { InputManager } from './InputManager';
 import { CameraRig } from '../player/CameraRig';
@@ -34,7 +35,7 @@ export class Game {
         this.playerBody = this.physics.createPlayerBody(new RAPIER.Vector3(0, 2, 0));
         this.physics.createFloorCollider(new RAPIER.Vector3(0, -0.5, 0), new RAPIER.Vector3(50, 1, 50));
 
-        this.playerController = new PlayerController(this.cameraRig, this.input, this.playerBody);
+        this.playerController = new PlayerController(this.cameraRig, this.input, this.playerBody, this.physics.world);
 
         this.addTestFloor();
         window.addEventListener('resize', () => this.onWindowResize());

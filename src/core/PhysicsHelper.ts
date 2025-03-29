@@ -1,3 +1,5 @@
+//src/core/PhysicsHelper.ts
+
 import * as RAPIER from '@dimforge/rapier3d';
 
 export class PhysicsHelper {
