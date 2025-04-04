@@ -8,6 +8,7 @@ import { UIManager } from '../ui/UIManager';
 
 import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
+import { ProjectileManager } from './ProjectileManager';
 
 export class Game {
   private scene: THREE.Scene;
@@ -21,6 +22,7 @@ export class Game {
   private playerBody: RAPIER.RigidBody;
   private ui: UIManager;
   private paused = false;
+  private projectileManager: ProjectileManager;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -51,6 +53,8 @@ export class Game {
       this.playerBody,
       this.physics.world,
     );
+
+    this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
 
     this.addTestFloor();
     window.addEventListener('resize', () => this.onWindowResize());
@@ -83,6 +87,16 @@ export class Game {
       this.paused = false;
       this.ui.hidePause();
       this.clock.getDelta(); // reset delta accumulator
+    });
+
+    window.addEventListener('click', () => {
+      const origin = new THREE.Vector3();
+      this.camera.getWorldPosition(origin);
+
+      const direction = new THREE.Vector3();
+      this.camera.getWorldDirection(direction);
+
+      this.projectileManager.fire(origin, direction);
     });
   }
 
@@ -122,6 +136,7 @@ export class Game {
 
     this.physics.step(delta);
     this.playerController.update();
+    this.projectileManager.update();
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
   };

@@ -28,7 +28,7 @@ export class PlayerController {
   private lockPointer() {
     const canvas = document.querySelector('canvas')!;
     canvas.addEventListener('click', () => {
-      console.log('Requesting pointer lock');
+      // console.log('Requesting pointer lock');
       canvas.requestPointerLock();
     });
 

@@ -1,0 +1,42 @@
+//src/core/Projectile.ts
+import * as RAPIER from '@dimforge/rapier3d';
+import * as THREE from 'three';
+
+export class Projectile {
+  mesh: THREE.Mesh;
+  body: RAPIER.RigidBody;
+
+  constructor(
+    scene: THREE.Scene,
+    world: RAPIER.World,
+    position: THREE.Vector3,
+    direction: THREE.Vector3,
+    debugScale: number = 1, // new param with default scale
+  ) {
+    const radius = 0.1 * debugScale;
+
+    const geometry = new THREE.SphereGeometry(radius, 8, 8);
+    const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.castShadow = true;
+    scene.add(this.mesh);
+
+    const bodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(
+      position.x,
+      position.y,
+      position.z,
+    );
+    this.body = world.createRigidBody(bodyDesc);
+
+    const colliderDesc = RAPIER.ColliderDesc.ball(radius);
+    world.createCollider(colliderDesc, this.body);
+
+    const impulse = direction.clone().multiplyScalar(15);
+    this.body.applyImpulse(impulse, true);
+  }
+
+  update() {
+    this.mesh.position.copy(this.body.translation());
+    this.mesh.quaternion.copy(this.body.rotation());
+  }
+}

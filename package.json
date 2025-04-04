@@ -10,7 +10,9 @@
     "lint": "eslint . --ext .ts --fix",
     "clean-install": "rd /s /q node_modules && del /f /q package-lock.json && npm install",
     "format": "prettier --write .",
-    "lint-format": "npm run lint && npm run format"
+    "lint-format": "npm run lint && npm run format",
+    "lint-format-build": "npm run lint-format && npm run build",
+    "lint-format-build-dev": "npm run lint-format && npm run build && npm run dev"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
