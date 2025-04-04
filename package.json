@@ -13,6 +13,7 @@
     "lint-format": "npm run lint && npm run format"
   },
   "devDependencies": {
+    "@types/node": "^22.14.0",
     "@types/three": "^0.174.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
