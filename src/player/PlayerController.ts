@@ -28,6 +28,7 @@ export class PlayerController {
   private lockPointer() {
     const canvas = document.querySelector('canvas')!;
     canvas.addEventListener('click', () => {
+      console.log('Requesting pointer lock');
       canvas.requestPointerLock();
     });
 
@@ -55,13 +56,14 @@ export class PlayerController {
     return hitParent !== null && hitParent.handle !== this.body.handle;
   }
 
-  update(delta: number) {
-    // delta = delta // Temporary delta use workaround until we start using it
+  update() {
+    // will want to include delta here as argument later
+    // delta = delta; // Temporary delta use workaround until we start using it
 
     // Mouse look
     const look = this.input.mouseMovement;
-    this.rig.rotateYaw(-look.x * this.lookSpeed * delta);
-    this.rig.rotatePitch(-look.y * this.lookSpeed * delta);
+    this.rig.rotateYaw(-look.x * this.lookSpeed);
+    this.rig.rotatePitch(-look.y * this.lookSpeed);
 
     const dir = this.input.getMovementDirection();
     const yaw = this.rig.object.rotation.y;

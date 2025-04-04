@@ -121,7 +121,7 @@ export class Game {
     const delta = this.clock.getDelta();
 
     this.physics.step(delta);
-    this.playerController.update(delta);
+    this.playerController.update();
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
   };
