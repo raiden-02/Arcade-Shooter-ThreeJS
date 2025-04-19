@@ -18,13 +18,24 @@ export class ProjectileManager {
     const debugScale = 5;
     const projectile = new Projectile(this.scene, this.world, origin, direction, debugScale);
     this.projectiles.push(projectile);
-    const length = 10; // or however far you want the line
+
+    // Draw a debug line to visualize the direction
+    // This is a temporary solution for debugging purposes
+    const length = 10;
     const end = origin.clone().add(direction.clone().normalize().multiplyScalar(length));
     drawDebugLine(this.scene, origin, end, 0x00ff00, 5); // green line for direction
   }
 
-  update() {
-    this.projectiles.forEach(p => p.update());
-    // You can also add lifetime cleanup here
+  update(delta: number) {
+    this.projectiles.forEach(p => p.update(delta));
+
+    // Remove expired projectiles
+    this.projectiles = this.projectiles.filter(p => {
+      if (p.shouldDespawn()) {
+        p.destroy(this.scene, this.world);
+        return false;
+      }
+      return true;
+    });
   }
 }

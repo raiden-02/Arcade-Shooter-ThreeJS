@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "lint-format": "npm run lint && npm run format",
     "lint-format-build": "npm run lint-format && npm run build",
-    "lint-format-build-dev": "npm run lint-format && npm run build && npm run dev"
+    "lint-format-build-dev": "npm run lint-format && npm run build && npm run dev",
+    "build-dev": "npm run build && npm run dev"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

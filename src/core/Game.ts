@@ -136,7 +136,7 @@ export class Game {
 
     this.physics.step(delta);
     this.playerController.update();
-    this.projectileManager.update();
+    this.projectileManager.update(delta);
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
   };
