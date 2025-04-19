@@ -12,7 +12,7 @@ export class InputManager {
       if (document.pointerLockElement) {
         this.mouseDelta.x += e.movementX;
         this.mouseDelta.y += e.movementY;
-        console.log('Mouse moved:', this.mouseDelta);
+        // console.log('Mouse moved:', this.mouseDelta);
       }
     });
   }

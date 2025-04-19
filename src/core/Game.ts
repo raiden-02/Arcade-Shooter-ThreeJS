@@ -2,6 +2,7 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { EnemyManager } from '../enemy/EnemyManager';
 import { CameraRig } from '../player/CameraRig';
 import { PlayerController } from '../player/PlayerController';
 import { UIManager } from '../ui/UIManager';
@@ -23,6 +24,7 @@ export class Game {
   private ui: UIManager;
   private paused = false;
   private projectileManager: ProjectileManager;
+  private enemyManager: EnemyManager;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -54,7 +56,16 @@ export class Game {
       this.physics.world,
     );
 
-    this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
+    this.enemyManager = new EnemyManager(this.scene, this.physics.world);
+    this.projectileManager = new ProjectileManager(
+      this.scene,
+      this.physics.world,
+      this.enemyManager,
+    );
+
+    this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
+    this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
+    this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
 
     this.addTestFloor();
     window.addEventListener('resize', () => this.onWindowResize());
@@ -137,6 +148,7 @@ export class Game {
     this.physics.step(delta);
     this.playerController.update();
     this.projectileManager.update(delta);
+    this.enemyManager.update();
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
   };
