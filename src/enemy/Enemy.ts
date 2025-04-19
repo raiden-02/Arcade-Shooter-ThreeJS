@@ -1,6 +1,8 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { CollisionGroups } from '../core/CollisionGroups';
+
 export class Enemy {
   mesh: THREE.Mesh;
   body: RAPIER.RigidBody;
@@ -24,7 +26,9 @@ export class Enemy {
 
     this.body.lockRotations(true, true);
 
-    const colliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.5);
+    const colliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.5).setCollisionGroups(
+      (CollisionGroups.ENEMY << 16) | CollisionGroups.PROJECTILE | CollisionGroups.DEFAULT,
+    );
     this.collider = world.createCollider(colliderDesc, this.body);
   }
 

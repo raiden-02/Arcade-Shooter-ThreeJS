@@ -2,6 +2,8 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { CollisionGroups } from './CollisionGroups';
+
 export class Projectile {
   mesh: THREE.Mesh;
   body: RAPIER.RigidBody;
@@ -48,7 +50,9 @@ export class Projectile {
 
     // This is Y aligned in the physics world RAPIER
     const halfheight = this.length / 2;
-    const colliderDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight);
+    const colliderDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight).setCollisionGroups(
+      (CollisionGroups.PROJECTILE << 16) | CollisionGroups.ENEMY | CollisionGroups.DEFAULT,
+    );
     this.collider = world.createCollider(colliderDesc, this.body);
     this.colliderHandle = this.collider.handle;
 
