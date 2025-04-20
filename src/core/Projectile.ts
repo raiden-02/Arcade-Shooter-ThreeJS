@@ -13,15 +13,19 @@ export class Projectile {
   radius: number;
   length: number;
   speed: number;
+  // damage applied on hit
+  damage: number;
 
   constructor(
     scene: THREE.Scene,
     world: RAPIER.World,
     position: THREE.Vector3,
     direction: THREE.Vector3,
+    // projectile parameters
     speed: number = 1,
     radius: number = 0.05,
     length: number = 0.1,
+    damage: number = 50,
   ) {
     const debugScale: number = 1; // scale for debug purposes
     this.radius = radius * debugScale;
@@ -55,6 +59,7 @@ export class Projectile {
     this.colliderHandle = this.collider.handle;
 
     this.speed = speed;
+    this.damage = damage;
 
     // Apply impulse in correct direction (Z forward)
     const impulse = direction.clone().normalize().multiplyScalar(this.speed);

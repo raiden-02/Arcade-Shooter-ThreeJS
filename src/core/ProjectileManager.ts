@@ -16,17 +16,35 @@ export class ProjectileManager {
     private enemyManager?: EnemyManager,
   ) {}
 
-  fire(origin: THREE.Vector3, direction: THREE.Vector3) {
-    // console.log('Firing from:', origin, 'in direction:', direction);
-    // const debugScale = 1;
-    const projectile = new Projectile(this.scene, this.world, origin, direction);
+  /**
+   * Fire a projectile from origin in direction with optional parameters.
+   */
+  fire(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    options?: { speed?: number; radius?: number; length?: number; damage?: number },
+  ) {
+    // Use provided options or fall back to Projectile defaults
+    const speedVal = options?.speed ?? undefined;
+    const radiusVal = options?.radius ?? undefined;
+    const lengthVal = options?.length ?? undefined;
+    const damageVal = options?.damage ?? undefined;
+    const projectile = new Projectile(
+      this.scene,
+      this.world,
+      origin,
+      direction,
+      speedVal,
+      radiusVal,
+      lengthVal,
+      damageVal,
+    );
     this.projectiles.push(projectile);
 
-    // Draw a debug line to visualize the direction
-    // This is a temporary solution for debugging purposes
-    const length = 10;
-    const end = origin.clone().add(direction.clone().normalize().multiplyScalar(length));
-    drawDebugLine(this.scene, origin, end, 0x00ff00, 5); // green line for direction
+    // Draw a debug line to visualize the direction (temporary)
+    const debugLength = 10;
+    const end = origin.clone().add(direction.clone().normalize().multiplyScalar(debugLength));
+    drawDebugLine(this.scene, origin, end, 0x00ff00, 5);
   }
 
   update(delta: number) {
@@ -53,7 +71,8 @@ export class ProjectileManager {
         });
 
         if (hitDetected) {
-          enemy.takeDamage(50);
+          // Apply projectile-specific damage
+          enemy.takeDamage(projectile.damage);
           toRemove.push(projectile);
           break; // don't process other enemies
         }

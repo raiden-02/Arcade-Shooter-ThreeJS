@@ -11,6 +11,7 @@ import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
 import { ProjectileManager } from './ProjectileManager';
 import { SkyBox } from './SkyBox';
+import { WeaponManager } from './WeaponManager';
 
 export class Game {
   private scene: THREE.Scene;
@@ -25,6 +26,7 @@ export class Game {
   private ui: UIManager;
   private paused = false;
   private projectileManager: ProjectileManager;
+  private weaponManager: WeaponManager;
   private enemyManager: EnemyManager;
 
   constructor() {
@@ -65,6 +67,8 @@ export class Game {
       this.physics.world,
       this.enemyManager,
     );
+    // Weapon system: manage multiple weapon types
+    this.weaponManager = new WeaponManager(this.projectileManager);
 
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
     this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
@@ -74,6 +78,9 @@ export class Game {
     window.addEventListener('resize', () => this.onWindowResize());
 
     this.ui = new UIManager();
+    // Initialize weapon info display for the default weapon
+    const initialWeapon = this.weaponManager.getCurrentWeapon();
+    this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());
 
     document.addEventListener('pointerlockchange', () => {
       const canvas = this.renderer.domElement;
@@ -103,18 +110,34 @@ export class Game {
       this.clock.getDelta(); // reset delta accumulator
     });
 
+    // Fire current weapon on click
     window.addEventListener('click', () => {
-      // Raycast from the center of the screen to aim at the crosshair
       const mouse = new THREE.Vector2(0, 0);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, this.camera);
-      // Offset spawn so the projectile starts slightly in front of the camera
       const spawnOffset = 0.5;
       const origin = raycaster.ray.origin
         .clone()
         .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
       const direction = raycaster.ray.direction.clone();
-      this.projectileManager.fire(origin, direction);
+      const time = this.clock.getElapsedTime();
+      this.weaponManager.tryFire(origin, direction, time);
+    });
+    // Weapon switching: keys 1-9 or Q for next
+    document.addEventListener('keydown', e => {
+      let switched = false;
+      if (e.code.startsWith('Digit')) {
+        const idx = parseInt(e.code.replace('Digit', ''), 10) - 1;
+        this.weaponManager.selectWeapon(idx);
+        switched = true;
+      } else if (e.code === 'KeyQ') {
+        this.weaponManager.nextWeapon();
+        switched = true;
+      }
+      if (switched) {
+        const current = this.weaponManager.getCurrentWeapon();
+        this.ui.updateWeaponInfo(current.getName(), current.getOptions());
+      }
     });
   }
 
