@@ -10,6 +10,7 @@ import { UIManager } from '../ui/UIManager';
 import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
 import { ProjectileManager } from './ProjectileManager';
+import { SkyBox } from './SkyBox';
 
 export class Game {
   private scene: THREE.Scene;
@@ -32,6 +33,8 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(this.renderer.domElement);
+    // Load and apply a pluggable skybox (background + environment lighting)
+    new SkyBox(this.renderer, this.scene, '/skybox/');
 
     this.camera = new THREE.PerspectiveCamera(
       75,
