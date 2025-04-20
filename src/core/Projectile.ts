@@ -31,21 +31,19 @@ export class Projectile {
     const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.castShadow = true;
-    this.mesh.rotateX(Math.PI / 2); // Align the capsule with the Z axis
     scene.add(this.mesh);
 
-    // Rotate the capsule to point in the direction of movement
-    // This is a bit tricky because THREE.js uses a right-handed coordinate system
-    // while RAPIER uses a left-handed coordinate system
-    // We need to rotate the capsule around the Y-axis by 90 degrees
-    // to align it with the Z-axis of RAPIER
-    const up = new THREE.Vector3(0, 1, 0); // capsule’s default up-axis
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction.clone().normalize());
+    // Orient mesh and physics body to point along the fire direction
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0), // capsule’s default up-axis
+      direction.clone().normalize(),
+    );
+    this.mesh.quaternion.copy(quaternion);
 
     const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(position.x, position.y, position.z)
       .setRotation({ x: quaternion.x, y: quaternion.y, z: quaternion.z, w: quaternion.w })
-      .setCcdEnabled(true); // Enable Continuous Collision Detection fixes tunelling and missed collisions
+      .setCcdEnabled(true); // Continuous Collision Detection to prevent tunneling
     this.body = world.createRigidBody(bodyDesc);
 
     // This is Y aligned in the physics world RAPIER
