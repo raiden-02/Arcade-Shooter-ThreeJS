@@ -23,6 +23,8 @@ export interface WeaponOptions {
   pelletSpreadDeg?: number;
   // vertical recoil angle per shot (radians)
   recoil?: number;
+  // whether the weapon can fire continuously when holding the trigger
+  automatic?: boolean;
 }
 /**
  * Base Weapon class. Handles rate-limiting and delegates firing logic.
@@ -80,6 +82,7 @@ export class AssaultRifle extends Weapon {
       projectileLength: 0.1,
       damage: 20,
       recoil: 0.01,
+      automatic: true,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -102,6 +105,7 @@ export class SubMachineGun extends Weapon {
       projectileLength: 0.1,
       damage: 12,
       recoil: 0.008,
+      automatic: true,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -124,6 +128,7 @@ export class LightMachineGun extends Weapon {
       projectileLength: 0.15,
       damage: 25,
       recoil: 0.012,
+      automatic: true,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

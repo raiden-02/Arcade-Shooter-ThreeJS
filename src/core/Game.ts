@@ -85,13 +85,17 @@ export class Game {
     this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());
     // Handle automatic firing when left mouse button is held
     window.addEventListener('mousedown', e => {
-      // Start automatic fire only when left button and pointer locked
       if (
         e.button === 0 &&
         !this.paused &&
         document.pointerLockElement === this.renderer.domElement
       ) {
-        this.isFiring = true;
+        const opts = this.weaponManager.getCurrentWeapon().getOptions();
+        if (opts.automatic) {
+          this.isFiring = true;
+        } else {
+          this.shoot();
+        }
       }
     });
     window.addEventListener('mouseup', e => {
@@ -172,6 +176,27 @@ export class Game {
   start() {
     this.animate();
   }
+  /**
+   * Perform a single weapon shot and apply recoil.
+   */
+  private shoot() {
+    const mouse = new THREE.Vector2(0, 0);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    const spawnOffset = 0.5;
+    const origin = raycaster.ray.origin
+      .clone()
+      .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
+    const direction = raycaster.ray.direction.clone();
+    const time = this.clock.getElapsedTime();
+    if (this.weaponManager.tryFire(origin, direction, time)) {
+      const opts = this.weaponManager.getCurrentWeapon().getOptions();
+      const recoilVert = opts.recoil ?? 0;
+      this.cameraRig.rotatePitch(recoilVert);
+      const recoilHorz = (Math.random() - 0.5) * recoilVert;
+      this.cameraRig.rotateYaw(recoilHorz);
+    }
+  }
 
   private animate = () => {
     requestAnimationFrame(this.animate);
@@ -184,26 +209,8 @@ export class Game {
     const delta = this.clock.getDelta();
 
     this.physics.step(delta);
-    // Automatic firing when left mouse button is held
     if (this.isFiring) {
-      const mouse = new THREE.Vector2(0, 0);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      const spawnOffset = 0.5;
-      const origin = raycaster.ray.origin
-        .clone()
-        .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
-      const direction = raycaster.ray.direction.clone();
-      const time = this.clock.getElapsedTime();
-      if (this.weaponManager.tryFire(origin, direction, time)) {
-        // Apply vertical recoil (now tilts view upward)
-        const opts = this.weaponManager.getCurrentWeapon().getOptions();
-        const recoilVert = opts.recoil ?? 0;
-        this.cameraRig.rotatePitch(recoilVert);
-        // Apply a small random horizontal recoil for realism
-        const recoilHorz = (Math.random() - 0.5) * recoilVert;
-        this.cameraRig.rotateYaw(recoilHorz);
-      }
+      this.shoot();
     }
     this.playerController.update();
     this.projectileManager.update(delta);
