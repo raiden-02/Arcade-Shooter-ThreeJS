@@ -101,12 +101,16 @@ export class Game {
     });
 
     window.addEventListener('click', () => {
-      const origin = new THREE.Vector3();
-      this.camera.getWorldPosition(origin);
-
-      const direction = new THREE.Vector3();
-      this.camera.getWorldDirection(direction);
-
+      // Raycast from the center of the screen to aim at the crosshair
+      const mouse = new THREE.Vector2(0, 0);
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.camera);
+      // Offset spawn so the projectile starts slightly in front of the camera
+      const spawnOffset = 0.5;
+      const origin = raycaster.ray.origin
+        .clone()
+        .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
+      const direction = raycaster.ray.direction.clone();
       this.projectileManager.fire(origin, direction);
     });
   }
