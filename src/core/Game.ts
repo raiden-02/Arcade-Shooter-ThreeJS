@@ -25,6 +25,8 @@ export class Game {
   private playerBody: RAPIER.RigidBody;
   private ui: UIManager;
   private paused = false;
+  // True while left mouse button is held down for automatic fire
+  private isFiring: boolean = false;
   private projectileManager: ProjectileManager;
   private weaponManager: WeaponManager;
   private enemyManager: EnemyManager;
@@ -81,12 +83,29 @@ export class Game {
     // Initialize weapon info display for the default weapon
     const initialWeapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());
+    // Handle automatic firing when left mouse button is held
+    window.addEventListener('mousedown', e => {
+      // Start automatic fire only when left button and pointer locked
+      if (
+        e.button === 0 &&
+        !this.paused &&
+        document.pointerLockElement === this.renderer.domElement
+      ) {
+        this.isFiring = true;
+      }
+    });
+    window.addEventListener('mouseup', e => {
+      if (e.button === 0) {
+        this.isFiring = false;
+      }
+    });
 
     document.addEventListener('pointerlockchange', () => {
       const canvas = this.renderer.domElement;
       if (document.pointerLockElement !== canvas && !this.paused) {
         this.paused = true;
         this.ui.showPause();
+        this.isFiring = false;
       }
     });
 
@@ -99,6 +118,7 @@ export class Game {
           // Resume
           this.paused = false;
           this.ui.hidePause();
+          this.isFiring = false;
           this.renderer.domElement.requestPointerLock(); // re-enter
         }
       }
@@ -108,21 +128,9 @@ export class Game {
       this.paused = false;
       this.ui.hidePause();
       this.clock.getDelta(); // reset delta accumulator
+      this.isFiring = false;
     });
 
-    // Fire current weapon on click
-    window.addEventListener('click', () => {
-      const mouse = new THREE.Vector2(0, 0);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      const spawnOffset = 0.5;
-      const origin = raycaster.ray.origin
-        .clone()
-        .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
-      const direction = raycaster.ray.direction.clone();
-      const time = this.clock.getElapsedTime();
-      this.weaponManager.tryFire(origin, direction, time);
-    });
     // Weapon switching: keys 1-9 or Q for next
     document.addEventListener('keydown', e => {
       let switched = false;
@@ -176,6 +184,27 @@ export class Game {
     const delta = this.clock.getDelta();
 
     this.physics.step(delta);
+    // Automatic firing when left mouse button is held
+    if (this.isFiring) {
+      const mouse = new THREE.Vector2(0, 0);
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.camera);
+      const spawnOffset = 0.5;
+      const origin = raycaster.ray.origin
+        .clone()
+        .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
+      const direction = raycaster.ray.direction.clone();
+      const time = this.clock.getElapsedTime();
+      if (this.weaponManager.tryFire(origin, direction, time)) {
+        // Apply vertical recoil (now tilts view upward)
+        const opts = this.weaponManager.getCurrentWeapon().getOptions();
+        const recoilVert = opts.recoil ?? 0;
+        this.cameraRig.rotatePitch(recoilVert);
+        // Apply a small random horizontal recoil for realism
+        const recoilHorz = (Math.random() - 0.5) * recoilVert;
+        this.cameraRig.rotateYaw(recoilHorz);
+      }
+    }
     this.playerController.update();
     this.projectileManager.update(delta);
     this.enemyManager.update();

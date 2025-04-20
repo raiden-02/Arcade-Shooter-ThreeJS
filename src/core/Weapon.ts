@@ -21,6 +21,8 @@ export interface WeaponOptions {
   pelletCount?: number;
   // spread angle in degrees
   pelletSpreadDeg?: number;
+  // vertical recoil angle per shot (radians)
+  recoil?: number;
 }
 /**
  * Base Weapon class. Handles rate-limiting and delegates firing logic.
@@ -50,11 +52,15 @@ export abstract class Weapon {
   public getOptions(): WeaponOptions {
     return this.options;
   }
-  tryFire(origin: THREE.Vector3, direction: THREE.Vector3, time: number) {
+  /**
+   * Attempt to fire the weapon at given time. Returns true if a shot was fired.
+   */
+  public tryFire(origin: THREE.Vector3, direction: THREE.Vector3, time: number): boolean {
     const interval = 1 / this.options.fireRate;
-    if (time - this.lastShotTime < interval) return;
+    if (time - this.lastShotTime < interval) return false;
     this.lastShotTime = time;
     this.fire(origin, direction);
+    return true;
   }
 
   /**
@@ -73,6 +79,7 @@ export class AssaultRifle extends Weapon {
       projectileRadius: 0.02,
       projectileLength: 0.1,
       damage: 20,
+      recoil: 0.01,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -94,6 +101,7 @@ export class SubMachineGun extends Weapon {
       projectileRadius: 0.02,
       projectileLength: 0.1,
       damage: 12,
+      recoil: 0.008,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -115,6 +123,7 @@ export class LightMachineGun extends Weapon {
       projectileRadius: 0.025,
       projectileLength: 0.15,
       damage: 25,
+      recoil: 0.012,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -136,6 +145,7 @@ export class Pistol extends Weapon {
       projectileRadius: 0.015,
       projectileLength: 0.08,
       damage: 15,
+      recoil: 0.005,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -159,6 +169,7 @@ export class Shotgun extends Weapon {
       damage: 6,
       pelletCount: 8,
       pelletSpreadDeg: 10,
+      recoil: 0.02,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -188,6 +199,7 @@ export class SniperRifle extends Weapon {
       projectileRadius: 0.02,
       projectileLength: 0.2,
       damage: 100,
+      recoil: 0.05,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -209,6 +221,7 @@ export class MarksmanRifle extends Weapon {
       projectileRadius: 0.02,
       projectileLength: 0.15,
       damage: 60,
+      recoil: 0.03,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -230,6 +243,7 @@ export class GrenadeLauncher extends Weapon {
       projectileRadius: 0.1,
       projectileLength: 0.2,
       damage: 80,
+      recoil: 0.02,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -251,6 +265,7 @@ export class RocketLauncher extends Weapon {
       projectileRadius: 0.12,
       projectileLength: 0.3,
       damage: 120,
+      recoil: 0.025,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

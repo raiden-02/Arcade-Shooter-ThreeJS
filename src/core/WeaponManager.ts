@@ -45,8 +45,11 @@ export class WeaponManager {
    * @param direction - shoot direction
    * @param time      - current time in seconds
    */
-  tryFire(origin: THREE.Vector3, direction: THREE.Vector3, time: number) {
-    this.getCurrentWeapon().tryFire(origin, direction, time);
+  /**
+   * Attempt to fire the current weapon. Returns true if a shot was fired.
+   */
+  public tryFire(origin: THREE.Vector3, direction: THREE.Vector3, time: number): boolean {
+    return this.getCurrentWeapon().tryFire(origin, direction, time);
   }
 
   /**
