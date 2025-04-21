@@ -2,7 +2,6 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
-import { Enemy } from '../enemy/Enemy';
 import { EnemyManager } from '../enemy/EnemyManager';
 
 import { drawDebugLine } from './DebugHelper';
@@ -22,25 +21,32 @@ export class ProjectileManager {
    * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
    */
   public handleCollisions(eventQueue: RAPIER.EventQueue): void {
-    const toRemove: Projectile[] = [];
-    // Drain all collision start events
+    // Drain Rapier collision start events for direct hits and shell bounces
     eventQueue.drainCollisionEvents((h1, h2, started) => {
       if (!started) return;
       for (const projectile of this.projectiles) {
-        const ph = projectile.collider.handle;
-        if (ph !== h1 && ph !== h2) continue;
-        // Determine if an enemy was involved in this collision
-        const enemyHit = this.enemyManager?.enemies.find(e => {
-          const eh = e.collider.handle;
-          return (eh === h1 || eh === h2) && !e.isDead;
-        });
-        // On first non-enemy collision, remove projectile immediately
-        if (!enemyHit) {
-          // Explosive projectiles still deal AOE
-          if (projectile.explosionRadius != null) {
+        if (!projectile.active) continue;
+        // Explosive single-collider
+        if (projectile.explosionRadius != null) {
+          const ch = projectile.collider.handle;
+          if (h1 === ch || h2 === ch) {
+            // Determine enemy hit (if any)
+            const enemyHit = this.enemyManager?.enemies.find(e => {
+              const eh = e.collider.handle;
+              return (eh === h1 || eh === h2) && !e.isDead;
+            });
             const center = projectile.mesh.position;
             const radius = projectile.explosionRadius;
             const radiusSq = radius * radius;
+            if (enemyHit) {
+              // Direct hit log
+              console.log(
+                `[Direct] Projectile impacted enemy at ${enemyHit.mesh.position
+                  .toArray()
+                  .map(v => v.toFixed(2))}`,
+              );
+            }
+            // AOE damage always
             for (const enemy of this.enemyManager?.enemies || []) {
               if (enemy.isDead) continue;
               const pos = enemy.mesh.position;
@@ -48,48 +54,60 @@ export class ProjectileManager {
               if (sqrDist <= radiusSq) {
                 const dist = Math.sqrt(sqrDist);
                 console.log(
-                  `[AOE] Explosion at ${center
-                    .toArray()
-                    .map(v => v.toFixed(2))} - damaging enemy at ${pos
-                    .toArray()
-                    .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
+                  `[AOE] Explosion at ${center.toArray().map(v => v.toFixed(2))}` +
+                    ` - damaging enemy at ${pos.toArray().map(v => v.toFixed(2))}` +
+                    ` (dist ${dist.toFixed(2)})`,
                 );
                 enemy.takeDamage(projectile.damage);
               }
             }
+            // Remove explosive immediately
+            projectile.active = false;
+            projectile.destroy(this.scene, this.world);
+            this.projectiles = this.projectiles.filter(p => p !== projectile);
           }
-          // Queue for removal
-          toRemove.push(projectile);
+          break;
+        } else {
+          // Non-explosive: two colliders
+          // 1) Sensor for enemy hits
+          const sensor = projectile.sensorCollider?.handle;
+          if (sensor != null && (h1 === sensor || h2 === sensor)) {
+            // Direct enemy hit via sensor
+            const enemyHit = this.enemyManager?.enemies.find(
+              e => e.collider.handle === (h1 === sensor ? h2 : h1),
+            );
+            if (enemyHit && !enemyHit.isDead) {
+              enemyHit.takeDamage(projectile.damage);
+            }
+            // Deactivate shell
+            projectile.active = false;
+            // Schedule cleanup after bounce lifetime
+            setTimeout(() => {
+              this.world.removeRigidBody(projectile.body);
+              this.scene.remove(projectile.mesh);
+              projectile.mesh.geometry.dispose();
+              (projectile.mesh.material as THREE.Material).dispose();
+              this.projectiles = this.projectiles.filter(p => p !== projectile);
+            }, this.shellCleanupTimeMs);
+            break;
+          }
+          // 2) Physical for world collisions
+          const phys = projectile.physicalCollider?.handle;
+          if (phys != null && (h1 === phys || h2 === phys)) {
+            // Shell hit floor/wall: deactivate after bounce
+            projectile.active = false;
+            setTimeout(() => {
+              this.world.removeRigidBody(projectile.body);
+              this.scene.remove(projectile.mesh);
+              projectile.mesh.geometry.dispose();
+              (projectile.mesh.material as THREE.Material).dispose();
+              this.projectiles = this.projectiles.filter(p => p !== projectile);
+            }, this.shellCleanupTimeMs);
+            break;
+          }
         }
-        break;
       }
     });
-    // Remove exploded projectiles
-    if (toRemove.length > 0) {
-      const removeSet = new Set<Projectile>(toRemove);
-      this.projectiles = this.projectiles.filter(p => {
-        if (removeSet.has(p)) {
-          if (p.explosionRadius != null) {
-            // Explosive: remove mesh and physics
-            p.destroy(this.scene, this.world);
-          } else {
-            // Non-explosive: remove physics only (keep mesh as static shell)
-            this.world.removeRigidBody(p.body);
-            // Schedule mesh cleanup after shellCleanupTimeMs
-            const mesh = p.mesh;
-            const geom = mesh.geometry;
-            const mat = mesh.material as THREE.Material;
-            setTimeout(() => {
-              this.scene.remove(mesh);
-              geom.dispose();
-              mat.dispose();
-            }, this.shellCleanupTimeMs);
-          }
-          return false;
-        }
-        return true;
-      });
-    }
   }
 
   /**
@@ -132,16 +150,15 @@ export class ProjectileManager {
   }
 
   update(delta: number) {
+    // Update all projectile meshes from physics bodies
     this.projectiles.forEach(p => p.update(delta));
 
-    const narrowPhase = this.world.narrowPhase;
-    const toRemove: Projectile[] = [];
-
-    for (const projectile of this.projectiles) {
-      // Check for lifetime expiration (explode on despawn for explosives)
+    // Handle expiration for explosive and shell cleanup
+    for (const projectile of this.projectiles.slice()) {
+      if (!projectile.active) continue;
       if (projectile.shouldDespawn()) {
-        // Area-of-effect damage on expiration (squared-distance check for performance)
         if (projectile.explosionRadius != null) {
+          // Explosive: AOE damage and immediate destroy
           const center = projectile.mesh.position;
           const radius = projectile.explosionRadius;
           const radiusSq = radius * radius;
@@ -150,97 +167,24 @@ export class ProjectileManager {
             const pos = enemy.mesh.position;
             const sqrDist = center.distanceToSquared(pos);
             if (sqrDist <= radiusSq) {
-              const dist = Math.sqrt(sqrDist);
-              console.log(
-                `[AOE] Projectile exploded at ${center
-                  .toArray()
-                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
-                  .toArray()
-                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
-              );
               enemy.takeDamage(projectile.damage);
             }
           }
-        }
-        toRemove.push(projectile);
-        continue;
-      }
-      // Collision detection
-      let collidedEnemy: Enemy | null = null;
-      for (const enemy of this.enemyManager?.enemies || []) {
-        if (enemy.isDead) continue;
-        let hitDetected = false;
-        narrowPhase.contactPair(projectile.collider.handle, enemy.collider.handle, manifold => {
-          if (manifold.numContacts() > 0) {
-            hitDetected = true;
-          }
-        });
-        if (hitDetected) {
-          collidedEnemy = enemy;
-          break;
-        }
-      }
-      if (collidedEnemy) {
-        if (projectile.explosionRadius != null) {
-          const center = projectile.mesh.position;
-          const radius = projectile.explosionRadius;
-          const radiusSq = radius * radius;
-          // Log direct impact before area damage
-          console.log(
-            `[Direct] Projectile impacted enemy at ${collidedEnemy.mesh.position
-              .toArray()
-              .map(v => v.toFixed(2))}`,
-          );
-          // Area-of-effect explosion damage (squared-distance check)
-          for (const enemy of this.enemyManager?.enemies || []) {
-            if (enemy.isDead) continue;
-            const pos = enemy.mesh.position;
-            const sqrDist = center.distanceToSquared(pos);
-            if (sqrDist <= radiusSq) {
-              const dist = Math.sqrt(sqrDist);
-              console.log(
-                `[AOE] Exploding at ${center
-                  .toArray()
-                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
-                  .toArray()
-                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
-              );
-              enemy.takeDamage(projectile.damage);
-            }
-          }
+          projectile.active = false;
+          projectile.destroy(this.scene, this.world);
+          this.projectiles = this.projectiles.filter(p => p !== projectile);
         } else {
-          console.log(
-            `[Direct] Projectile hit enemy at ${collidedEnemy.mesh.position
-              .toArray()
-              .map(v => v.toFixed(2))} - damage ${projectile.damage}`,
-          );
-          collidedEnemy.takeDamage(projectile.damage);
-        }
-        toRemove.push(projectile);
-      }
-    }
-
-    this.projectiles = this.projectiles.filter(p => {
-      if (toRemove.includes(p)) {
-        if (p.explosionRadius != null) {
-          // Explosive: remove mesh and physics immediately
-          p.destroy(this.scene, this.world);
-        } else {
-          // Non-explosive: remove physics only (keep mesh as static shell)
-          this.world.removeRigidBody(p.body);
-          // Schedule mesh cleanup
-          const mesh = p.mesh;
-          const geom = mesh.geometry;
-          const mat = mesh.material as THREE.Material;
+          // Non-explosive shell: deactivate then schedule cleanup
+          projectile.active = false;
           setTimeout(() => {
-            this.scene.remove(mesh);
-            geom.dispose();
-            mat.dispose();
+            this.world.removeRigidBody(projectile.body);
+            this.scene.remove(projectile.mesh);
+            projectile.mesh.geometry.dispose();
+            (projectile.mesh.material as THREE.Material).dispose();
+            this.projectiles = this.projectiles.filter(p => p !== projectile);
           }, this.shellCleanupTimeMs);
         }
-        return false;
       }
-      return true;
-    });
+    }
   }
 }
