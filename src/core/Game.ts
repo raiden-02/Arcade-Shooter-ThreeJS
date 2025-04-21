@@ -11,6 +11,7 @@ import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
 import { ProjectileManager } from './ProjectileManager';
 import { SkyBox } from './SkyBox';
+import { WeaponManager } from './WeaponManager';
 
 export class Game {
   private scene: THREE.Scene;
@@ -24,7 +25,10 @@ export class Game {
   private playerBody: RAPIER.RigidBody;
   private ui: UIManager;
   private paused = false;
+  // True while left mouse button is held down for automatic fire
+  private isFiring: boolean = false;
   private projectileManager: ProjectileManager;
+  private weaponManager: WeaponManager;
   private enemyManager: EnemyManager;
 
   constructor() {
@@ -65,6 +69,8 @@ export class Game {
       this.physics.world,
       this.enemyManager,
     );
+    // Weapon system: manage multiple weapon types
+    this.weaponManager = new WeaponManager(this.projectileManager);
 
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
     this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
@@ -74,12 +80,36 @@ export class Game {
     window.addEventListener('resize', () => this.onWindowResize());
 
     this.ui = new UIManager();
+    // Initialize weapon info display for the default weapon
+    const initialWeapon = this.weaponManager.getCurrentWeapon();
+    this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());
+    // Handle automatic firing when left mouse button is held
+    window.addEventListener('mousedown', e => {
+      if (
+        e.button === 0 &&
+        !this.paused &&
+        document.pointerLockElement === this.renderer.domElement
+      ) {
+        const opts = this.weaponManager.getCurrentWeapon().getOptions();
+        if (opts.automatic) {
+          this.isFiring = true;
+        } else {
+          this.shoot();
+        }
+      }
+    });
+    window.addEventListener('mouseup', e => {
+      if (e.button === 0) {
+        this.isFiring = false;
+      }
+    });
 
     document.addEventListener('pointerlockchange', () => {
       const canvas = this.renderer.domElement;
       if (document.pointerLockElement !== canvas && !this.paused) {
         this.paused = true;
         this.ui.showPause();
+        this.isFiring = false;
       }
     });
 
@@ -92,6 +122,7 @@ export class Game {
           // Resume
           this.paused = false;
           this.ui.hidePause();
+          this.isFiring = false;
           this.renderer.domElement.requestPointerLock(); // re-enter
         }
       }
@@ -101,20 +132,24 @@ export class Game {
       this.paused = false;
       this.ui.hidePause();
       this.clock.getDelta(); // reset delta accumulator
+      this.isFiring = false;
     });
 
-    window.addEventListener('click', () => {
-      // Raycast from the center of the screen to aim at the crosshair
-      const mouse = new THREE.Vector2(0, 0);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      // Offset spawn so the projectile starts slightly in front of the camera
-      const spawnOffset = 0.5;
-      const origin = raycaster.ray.origin
-        .clone()
-        .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
-      const direction = raycaster.ray.direction.clone();
-      this.projectileManager.fire(origin, direction);
+    // Weapon switching: keys 1-9 or Q for next
+    document.addEventListener('keydown', e => {
+      let switched = false;
+      if (e.code.startsWith('Digit')) {
+        const idx = parseInt(e.code.replace('Digit', ''), 10) - 1;
+        this.weaponManager.selectWeapon(idx);
+        switched = true;
+      } else if (e.code === 'KeyQ') {
+        this.weaponManager.nextWeapon();
+        switched = true;
+      }
+      if (switched) {
+        const current = this.weaponManager.getCurrentWeapon();
+        this.ui.updateWeaponInfo(current.getName(), current.getOptions());
+      }
     });
   }
 
@@ -141,6 +176,27 @@ export class Game {
   start() {
     this.animate();
   }
+  /**
+   * Perform a single weapon shot and apply recoil.
+   */
+  private shoot() {
+    const mouse = new THREE.Vector2(0, 0);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    const spawnOffset = 0.5;
+    const origin = raycaster.ray.origin
+      .clone()
+      .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
+    const direction = raycaster.ray.direction.clone();
+    const time = this.clock.getElapsedTime();
+    if (this.weaponManager.tryFire(origin, direction, time)) {
+      const opts = this.weaponManager.getCurrentWeapon().getOptions();
+      const recoilVert = opts.recoil ?? 0;
+      this.cameraRig.rotatePitch(recoilVert);
+      const recoilHorz = (Math.random() - 0.5) * recoilVert;
+      this.cameraRig.rotateYaw(recoilHorz);
+    }
+  }
 
   private animate = () => {
     requestAnimationFrame(this.animate);
@@ -153,8 +209,13 @@ export class Game {
     const delta = this.clock.getDelta();
 
     this.physics.step(delta);
+    if (this.isFiring) {
+      this.shoot();
+    }
     this.playerController.update();
     this.projectileManager.update(delta);
+    // Handle collisions with the environment (floor, walls, etc.)
+    this.projectileManager.handleCollisions(this.physics.eventQueue);
     this.enemyManager.update();
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
