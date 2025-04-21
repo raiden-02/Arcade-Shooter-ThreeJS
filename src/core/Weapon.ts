@@ -42,9 +42,6 @@ export abstract class Weapon {
   /**
    * Get the weapon's display name.
    */
-  /**
-   * Get the weapon's display name.
-   */
   public getName(): string {
     return this.options.name;
   }
@@ -171,7 +168,7 @@ export class Shotgun extends Weapon {
       projectileSpeed: 40,
       projectileRadius: 0.01,
       projectileLength: 0.05,
-      damage: 6,
+      damage: 13,
       pelletCount: 8,
       pelletSpreadDeg: 10,
       recoil: 0.02,
