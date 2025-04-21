@@ -15,6 +15,8 @@ export class Projectile {
   speed: number;
   // damage applied on hit
   damage: number;
+  /** optional radius for area-of-effect explosion */
+  explosionRadius?: number;
 
   constructor(
     scene: THREE.Scene,
@@ -26,7 +28,10 @@ export class Projectile {
     radius: number = 0.05,
     length: number = 0.1,
     damage: number = 50,
+    // optional explosion radius for AOE
+    explosionRadius?: number,
   ) {
+    this.explosionRadius = explosionRadius;
     const debugScale: number = 1; // scale for debug purposes
     this.radius = radius * debugScale;
     this.length = length * debugScale;

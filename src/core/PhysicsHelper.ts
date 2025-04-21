@@ -23,8 +23,12 @@ export class PhysicsHelper {
 
     const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x / 2, size.y / 2, size.z / 2)
       .setTranslation(pos.x, pos.y, pos.z)
+      // Floor belongs to DEFAULT group; allow collisions with player, enemy, and projectiles
       .setCollisionGroups(
-        (CollisionGroups.DEFAULT << 16) | CollisionGroups.PLAYER | CollisionGroups.ENEMY,
+        (CollisionGroups.DEFAULT << 16) |
+          CollisionGroups.PLAYER |
+          CollisionGroups.ENEMY |
+          CollisionGroups.PROJECTILE,
       );
 
     this.world.createCollider(colliderDesc, body);
