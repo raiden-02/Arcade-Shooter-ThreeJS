@@ -10,6 +10,8 @@ import { Projectile } from './Projectile';
 
 export class ProjectileManager {
   private projectiles: Projectile[] = [];
+  // How long to keep non-explosive shell meshes before cleanup (ms)
+  private shellCleanupTimeMs: number = 5000;
 
   constructor(
     private scene: THREE.Scene,
@@ -27,31 +29,36 @@ export class ProjectileManager {
       for (const projectile of this.projectiles) {
         const ph = projectile.collider.handle;
         if (ph !== h1 && ph !== h2) continue;
-        // Did it hit an enemy? If so, skip here (update() handles enemy hits)
+        // Determine if an enemy was involved in this collision
         const enemyHit = this.enemyManager?.enemies.find(e => {
           const eh = e.collider.handle;
           return (eh === h1 || eh === h2) && !e.isDead;
         });
-        if (!enemyHit && projectile.explosionRadius != null) {
-          const center = projectile.mesh.position;
-          const radius = projectile.explosionRadius;
-          const radiusSq = radius * radius;
-          for (const enemy of this.enemyManager?.enemies || []) {
-            if (enemy.isDead) continue;
-            const pos = enemy.mesh.position;
-            const sqrDist = center.distanceToSquared(pos);
-            if (sqrDist <= radiusSq) {
-              const dist = Math.sqrt(sqrDist);
-              console.log(
-                `[AOE] Explosion at ${center
-                  .toArray()
-                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
-                  .toArray()
-                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
-              );
-              enemy.takeDamage(projectile.damage);
+        // On first non-enemy collision, remove projectile immediately
+        if (!enemyHit) {
+          // Explosive projectiles still deal AOE
+          if (projectile.explosionRadius != null) {
+            const center = projectile.mesh.position;
+            const radius = projectile.explosionRadius;
+            const radiusSq = radius * radius;
+            for (const enemy of this.enemyManager?.enemies || []) {
+              if (enemy.isDead) continue;
+              const pos = enemy.mesh.position;
+              const sqrDist = center.distanceToSquared(pos);
+              if (sqrDist <= radiusSq) {
+                const dist = Math.sqrt(sqrDist);
+                console.log(
+                  `[AOE] Explosion at ${center
+                    .toArray()
+                    .map(v => v.toFixed(2))} - damaging enemy at ${pos
+                    .toArray()
+                    .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
+                );
+                enemy.takeDamage(projectile.damage);
+              }
             }
           }
+          // Queue for removal
           toRemove.push(projectile);
         }
         break;
@@ -59,9 +66,25 @@ export class ProjectileManager {
     });
     // Remove exploded projectiles
     if (toRemove.length > 0) {
+      const removeSet = new Set<Projectile>(toRemove);
       this.projectiles = this.projectiles.filter(p => {
-        if (toRemove.includes(p)) {
-          p.destroy(this.scene, this.world);
+        if (removeSet.has(p)) {
+          if (p.explosionRadius != null) {
+            // Explosive: remove mesh and physics
+            p.destroy(this.scene, this.world);
+          } else {
+            // Non-explosive: remove physics only (keep mesh as static shell)
+            this.world.removeRigidBody(p.body);
+            // Schedule mesh cleanup after shellCleanupTimeMs
+            const mesh = p.mesh;
+            const geom = mesh.geometry;
+            const mat = mesh.material as THREE.Material;
+            setTimeout(() => {
+              this.scene.remove(mesh);
+              geom.dispose();
+              mat.dispose();
+            }, this.shellCleanupTimeMs);
+          }
           return false;
         }
         return true;
@@ -199,7 +222,22 @@ export class ProjectileManager {
 
     this.projectiles = this.projectiles.filter(p => {
       if (toRemove.includes(p)) {
-        p.destroy(this.scene, this.world);
+        if (p.explosionRadius != null) {
+          // Explosive: remove mesh and physics immediately
+          p.destroy(this.scene, this.world);
+        } else {
+          // Non-explosive: remove physics only (keep mesh as static shell)
+          this.world.removeRigidBody(p.body);
+          // Schedule mesh cleanup
+          const mesh = p.mesh;
+          const geom = mesh.geometry;
+          const mat = mesh.material as THREE.Material;
+          setTimeout(() => {
+            this.scene.remove(mesh);
+            geom.dispose();
+            mat.dispose();
+          }, this.shellCleanupTimeMs);
+        }
         return false;
       }
       return true;
