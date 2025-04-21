@@ -16,6 +16,58 @@ export class ProjectileManager {
     private world: RAPIER.World,
     private enemyManager?: EnemyManager,
   ) {}
+  /**
+   * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
+   */
+  public handleCollisions(eventQueue: RAPIER.EventQueue): void {
+    const toRemove: Projectile[] = [];
+    // Drain all collision start events
+    eventQueue.drainCollisionEvents((h1, h2, started) => {
+      if (!started) return;
+      for (const projectile of this.projectiles) {
+        const ph = projectile.collider.handle;
+        if (ph !== h1 && ph !== h2) continue;
+        // Did it hit an enemy? If so, skip here (update() handles enemy hits)
+        const enemyHit = this.enemyManager?.enemies.find(e => {
+          const eh = e.collider.handle;
+          return (eh === h1 || eh === h2) && !e.isDead;
+        });
+        if (!enemyHit && projectile.explosionRadius != null) {
+          const center = projectile.mesh.position;
+          const radius = projectile.explosionRadius;
+          const radiusSq = radius * radius;
+          for (const enemy of this.enemyManager?.enemies || []) {
+            if (enemy.isDead) continue;
+            const pos = enemy.mesh.position;
+            const sqrDist = center.distanceToSquared(pos);
+            if (sqrDist <= radiusSq) {
+              const dist = Math.sqrt(sqrDist);
+              console.log(
+                `[AOE] Explosion at ${center
+                  .toArray()
+                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
+                  .toArray()
+                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
+              );
+              enemy.takeDamage(projectile.damage);
+            }
+          }
+          toRemove.push(projectile);
+        }
+        break;
+      }
+    });
+    // Remove exploded projectiles
+    if (toRemove.length > 0) {
+      this.projectiles = this.projectiles.filter(p => {
+        if (toRemove.includes(p)) {
+          p.destroy(this.scene, this.world);
+          return false;
+        }
+        return true;
+      });
+    }
+  }
 
   /**
    * Fire a projectile from origin in direction with optional parameters.
@@ -65,19 +117,23 @@ export class ProjectileManager {
     for (const projectile of this.projectiles) {
       // Check for lifetime expiration (explode on despawn for explosives)
       if (projectile.shouldDespawn()) {
-        // Area-of-effect damage on expiration
+        // Area-of-effect damage on expiration (squared-distance check for performance)
         if (projectile.explosionRadius != null) {
           const center = projectile.mesh.position;
+          const radius = projectile.explosionRadius;
+          const radiusSq = radius * radius;
           for (const enemy of this.enemyManager?.enemies || []) {
             if (enemy.isDead) continue;
-            const distance = center.distanceTo(enemy.mesh.position);
-            if (distance <= projectile.explosionRadius) {
+            const pos = enemy.mesh.position;
+            const sqrDist = center.distanceToSquared(pos);
+            if (sqrDist <= radiusSq) {
+              const dist = Math.sqrt(sqrDist);
               console.log(
                 `[AOE] Projectile exploded at ${center
                   .toArray()
-                  .map(v => v.toFixed(2))} - damaging enemy at ${enemy.mesh.position
+                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
                   .toArray()
-                  .map(v => v.toFixed(2))} (dist ${distance.toFixed(2)})`,
+                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
               );
               enemy.takeDamage(projectile.damage);
             }
@@ -104,23 +160,27 @@ export class ProjectileManager {
       if (collidedEnemy) {
         if (projectile.explosionRadius != null) {
           const center = projectile.mesh.position;
+          const radius = projectile.explosionRadius;
+          const radiusSq = radius * radius;
           // Log direct impact before area damage
           console.log(
             `[Direct] Projectile impacted enemy at ${collidedEnemy.mesh.position
               .toArray()
               .map(v => v.toFixed(2))}`,
           );
-          // Area-of-effect explosion damage
+          // Area-of-effect explosion damage (squared-distance check)
           for (const enemy of this.enemyManager?.enemies || []) {
             if (enemy.isDead) continue;
-            const distance = center.distanceTo(enemy.mesh.position);
-            if (distance <= projectile.explosionRadius) {
+            const pos = enemy.mesh.position;
+            const sqrDist = center.distanceToSquared(pos);
+            if (sqrDist <= radiusSq) {
+              const dist = Math.sqrt(sqrDist);
               console.log(
                 `[AOE] Exploding at ${center
                   .toArray()
-                  .map(v => v.toFixed(2))} - damaging enemy at ${enemy.mesh.position
+                  .map(v => v.toFixed(2))} - damaging enemy at ${pos
                   .toArray()
-                  .map(v => v.toFixed(2))} (dist ${distance.toFixed(2)})`,
+                  .map(v => v.toFixed(2))} (dist ${dist.toFixed(2)})`,
               );
               enemy.takeDamage(projectile.damage);
             }

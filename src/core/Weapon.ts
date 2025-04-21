@@ -248,7 +248,8 @@ export class GrenadeLauncher extends Weapon {
       projectileLength: 0.2,
       damage: 80,
       recoil: 0.02,
-      explosionRadius: 12,
+      // explosion radius in world units (meters); tuned for tighter blast
+      explosionRadius: 2,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -272,7 +273,8 @@ export class RocketLauncher extends Weapon {
       projectileLength: 0.3,
       damage: 120,
       recoil: 0.025,
-      explosionRadius: 15,
+      // explosion radius in world units (meters); tuned for controlled blast
+      explosionRadius: 3,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

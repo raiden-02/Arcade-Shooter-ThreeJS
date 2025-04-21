@@ -6,15 +6,20 @@ import { CollisionGroups } from './CollisionGroups';
 
 export class PhysicsHelper {
   public world: RAPIER.World;
+  // Collect collision events (for AOE on environment impacts)
+  public eventQueue: RAPIER.EventQueue;
 
   constructor() {
     const gravity = new RAPIER.Vector3(0, -9.81, 0);
     this.world = new RAPIER.World(gravity);
+    // Enable auto-drain so events are cleared each step
+    this.eventQueue = new RAPIER.EventQueue(true);
   }
 
   step(delta: number) {
     this.world.timestep = delta;
-    this.world.step();
+    // Step the physics world and capture all collision events
+    this.world.step(this.eventQueue);
   }
 
   createFloorCollider(pos: RAPIER.Vector3, size: RAPIER.Vector3) {
@@ -29,7 +34,9 @@ export class PhysicsHelper {
           CollisionGroups.PLAYER |
           CollisionGroups.ENEMY |
           CollisionGroups.PROJECTILE,
-      );
+      )
+      // Enable collision events so projectiles touching the floor will explode
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
 
     this.world.createCollider(colliderDesc, body);
   }

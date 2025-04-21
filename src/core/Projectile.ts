@@ -57,9 +57,12 @@ export class Projectile {
 
     // This is Y aligned in the physics world RAPIER
     const halfheight = this.length / 2;
-    const colliderDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight).setCollisionGroups(
-      (CollisionGroups.PROJECTILE << 16) | CollisionGroups.ENEMY | CollisionGroups.DEFAULT,
-    );
+    const colliderDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight)
+      .setCollisionGroups(
+        (CollisionGroups.PROJECTILE << 16) | CollisionGroups.ENEMY | CollisionGroups.DEFAULT,
+      )
+      // Enable collision events so we can detect hits on non-enemy surfaces
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
     this.collider = world.createCollider(colliderDesc, this.body);
     this.colliderHandle = this.collider.handle;
 

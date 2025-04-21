@@ -214,6 +214,8 @@ export class Game {
     }
     this.playerController.update();
     this.projectileManager.update(delta);
+    // Handle collisions with the environment (floor, walls, etc.)
+    this.projectileManager.handleCollisions(this.physics.eventQueue);
     this.enemyManager.update();
     this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
