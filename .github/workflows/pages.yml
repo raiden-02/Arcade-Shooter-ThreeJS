@@ -6,8 +6,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allow pushing to gh-pages branch
+      pages: write # Allow deployment of GitHub Pages
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: true # use GITHUB_TOKEN for git push
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
