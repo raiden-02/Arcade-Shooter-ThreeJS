@@ -11,9 +11,9 @@ const fsm: GameStateMachine = engine.stateMachine;
 
 // Prepare playing scene
 const level = new DevLevel(engine);
-// When entering Playing state, load the scene
-fsm.onStateChange((_, next) => {
-  if (next === GameState.Playing) {
+// When entering Playing state from Boot or MainMenu, load the scene
+fsm.onStateChange((prev, next) => {
+  if (next === GameState.Playing && (prev === GameState.Boot || prev === GameState.MainMenu)) {
     engine.changeScene(level);
   }
 });
