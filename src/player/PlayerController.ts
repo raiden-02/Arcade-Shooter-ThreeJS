@@ -3,7 +3,7 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
-import { InputManager } from '../core/InputManager';
+import { InputManager, InputAction } from '../core/InputManager';
 
 import { CameraRig } from './CameraRig';
 
@@ -61,11 +61,16 @@ export class PlayerController {
     // delta = delta; // Temporary delta use workaround until we start using it
 
     // Mouse look
-    const look = this.input.mouseMovement;
+    const look = this.input.getMouseDelta();
     this.rig.rotateYaw(-look.x * this.lookSpeed);
     this.rig.rotatePitch(-look.y * this.lookSpeed);
 
-    const dir = this.input.getMovementDirection();
+    // Movement input mapped to actions
+    const dir = new THREE.Vector3();
+    if (this.input.isPressed(InputAction.MoveForward)) dir.z -= 1;
+    if (this.input.isPressed(InputAction.MoveBackward)) dir.z += 1;
+    if (this.input.isPressed(InputAction.MoveLeft)) dir.x -= 1;
+    if (this.input.isPressed(InputAction.MoveRight)) dir.x += 1;
     const yaw = this.rig.object.rotation.y;
     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
@@ -81,7 +86,7 @@ export class PlayerController {
         .normalize();
 
       // Apply sprinting speed
-      const speed = this.input.isSprinting() ? this.speed * 1.8 : this.speed;
+      const speed = this.input.isPressed(InputAction.Sprint) ? this.speed * 1.8 : this.speed;
       moveVec.multiplyScalar(speed);
 
       // Apply only XZ velocity
@@ -94,7 +99,7 @@ export class PlayerController {
     // console.log(this.input.isJumpPressed(), this.isOnGround());
 
     // Jumping
-    if (this.input.isJumpPressed()) {
+    if (this.input.isPressed(InputAction.Jump)) {
       if (this.canJump && this.isOnGround()) {
         const velocity = this.body.linvel();
         this.body.setLinvel(new RAPIER.Vector3(velocity.x, this.jumpForce, velocity.z), true);

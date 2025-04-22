@@ -1,46 +1,96 @@
 // /src/core/InputManager.ts
 import * as THREE from 'three';
 
+export enum InputAction {
+  MoveForward = 'MoveForward',
+  MoveBackward = 'MoveBackward',
+  MoveLeft = 'MoveLeft',
+  MoveRight = 'MoveRight',
+  Jump = 'Jump',
+  Sprint = 'Sprint',
+  Fire = 'Fire',
+  Aim = 'Aim',
+}
+
+/**
+ * Manages mapped user input (keyboard and mouse) as named actions.
+ */
 export class InputManager {
-  private keys: { [key: string]: boolean } = {};
+  // Raw state
+  private keyStates: Map<string, boolean> = new Map();
+  private buttonStates: Map<number, boolean> = new Map();
   private mouseDelta: THREE.Vector2 = new THREE.Vector2();
+  private pointerLocked: boolean = false;
+
+  // Action bindings
+  private keyBindings: Map<InputAction, string[]> = new Map([
+    [InputAction.MoveForward, ['KeyW']],
+    [InputAction.MoveBackward, ['KeyS']],
+    [InputAction.MoveLeft, ['KeyA']],
+    [InputAction.MoveRight, ['KeyD']],
+    [InputAction.Jump, ['Space']],
+    [InputAction.Sprint, ['ShiftLeft', 'ShiftRight']],
+  ]);
+  private buttonBindings: Map<InputAction, number[]> = new Map([
+    [InputAction.Fire, [0]], // Left mouse button
+    [InputAction.Aim, [2]], // Right mouse button
+  ]);
 
   constructor() {
-    window.addEventListener('keydown', e => (this.keys[e.code] = true));
-    window.addEventListener('keyup', e => (this.keys[e.code] = false));
+    // Keyboard
+    window.addEventListener('keydown', e => this.keyStates.set(e.code, true));
+    window.addEventListener('keyup', e => this.keyStates.set(e.code, false));
+    // Mouse buttons
+    window.addEventListener('mousedown', e => this.buttonStates.set(e.button, true));
+    window.addEventListener('mouseup', e => this.buttonStates.set(e.button, false));
+    // Mouse movement (for look)
     window.addEventListener('mousemove', e => {
-      if (document.pointerLockElement) {
+      if (this.pointerLocked) {
         this.mouseDelta.x += e.movementX;
         this.mouseDelta.y += e.movementY;
-        // console.log('Mouse moved:', this.mouseDelta);
+      }
+    });
+    // Pointer lock state
+    document.addEventListener('pointerlockchange', () => {
+      this.pointerLocked = document.pointerLockElement !== null;
+      if (!this.pointerLocked) {
+        this.reset();
       }
     });
   }
 
-  getMovementDirection(): THREE.Vector3 {
-    const dir = new THREE.Vector3();
-    if (this.keys['KeyW']) dir.z -= 1;
-    if (this.keys['KeyS']) dir.z += 1;
-    if (this.keys['KeyA']) dir.x -= 1;
-    if (this.keys['KeyD']) dir.x += 1;
-    return dir;
-  }
-
-  get mouseMovement(): THREE.Vector2 {
+  /**
+   * Returns and clears accumulated mouse movement delta.
+   */
+  public getMouseDelta(): THREE.Vector2 {
     const delta = this.mouseDelta.clone();
-    this.mouseDelta.set(0, 0); // Reset after each frame
+    this.mouseDelta.set(0, 0);
     return delta;
   }
 
-  isSprinting(): boolean {
-    return this.keys['ShiftLeft'] && this.keys['KeyW'];
+  /**
+   * Returns true if the given action is currently held.
+   */
+  public isPressed(action: InputAction): boolean {
+    // Check keys
+    const keys = this.keyBindings.get(action) || [];
+    for (const code of keys) {
+      if (this.keyStates.get(code)) return true;
+    }
+    // Check mouse buttons
+    const buttons = this.buttonBindings.get(action) || [];
+    for (const btn of buttons) {
+      if (this.buttonStates.get(btn)) return true;
+    }
+    return false;
   }
 
-  isJumpPressed(): boolean {
-    return this.keys['Space'];
-  }
-
-  reset() {
-    this.keys = {};
+  /**
+   * Reset all input states (e.g. on pointer unlock).
+   */
+  public reset(): void {
+    this.keyStates.clear();
+    this.buttonStates.clear();
+    this.mouseDelta.set(0, 0);
   }
 }
