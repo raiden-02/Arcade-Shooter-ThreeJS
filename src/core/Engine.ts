@@ -91,6 +91,10 @@ export class Engine {
         }
       }
     });
+    // Resume from pause via PauseMenu "Resume" button
+    document.addEventListener('unpause', () => {
+      this.stateMachine.transition(GameState.Playing);
+    });
   }
 
   /**
