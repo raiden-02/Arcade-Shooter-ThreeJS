@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 import { UIManager } from '../ui/UIManager';
 
+import { GameStateMachine, GameState } from './GameStateMachine';
 import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
 import { IScene } from './Scene';
@@ -20,13 +21,11 @@ export class Engine {
   public ui: UIManager;
   private currentScene: IScene | null = null;
   private clock: THREE.Clock;
-  /**
-   * Returns elapsed time since engine start.
-   */
   public getTime(): number {
     return this.clock.getElapsedTime();
   }
-  private paused: boolean = false;
+  // Global state machine for game states (Boot → MainMenu → Playing → Paused → GameOver)
+  public stateMachine: GameStateMachine;
 
   constructor(container?: HTMLElement) {
     // Scene and renderer
@@ -57,29 +56,38 @@ export class Engine {
     // UI
     this.ui = new UIManager();
 
+    // State machine
+    this.stateMachine = new GameStateMachine();
+    // Tie UI and pointer lock behavior to state transitions
+    this.stateMachine.onStateChange((_, next) => {
+      if (next === GameState.Paused) {
+        this.ui.showPause();
+      } else if (next === GameState.Playing) {
+        this.ui.hidePause();
+        this.renderer.domElement.requestPointerLock();
+        this.clock.getDelta();
+      }
+    });
+
     // Skybox
     new SkyBox(this.renderer, this.scene, '/skybox/');
 
     // Handle resize
     window.addEventListener('resize', () => this.onWindowResize());
 
-    // Pause via pointer lock change
+    // Pause when pointer lock is lost
     document.addEventListener('pointerlockchange', () => {
       if (document.pointerLockElement !== this.renderer.domElement) {
-        this.paused = true;
-        this.ui.showPause();
+        this.stateMachine.transition(GameState.Paused);
       }
     });
-    // Escape toggles pause
+    // Escape toggles between playing and paused
     document.addEventListener('keydown', e => {
       if (e.code === 'Escape') {
-        if (!this.paused) {
+        if (this.stateMachine.getState() !== GameState.Paused) {
           document.exitPointerLock();
         } else {
-          this.paused = false;
-          this.ui.hidePause();
-          this.renderer.domElement.requestPointerLock();
-          this.clock.getDelta();
+          this.stateMachine.transition(GameState.Playing);
         }
       }
     });
@@ -105,7 +113,8 @@ export class Engine {
 
   private animate = (): void => {
     requestAnimationFrame(this.animate);
-    if (this.paused) {
+    // Skip updates when paused
+    if (this.stateMachine.getState() === GameState.Paused) {
       this.clock.getDelta();
       return;
     }
