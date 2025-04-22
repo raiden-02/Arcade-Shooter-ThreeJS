@@ -1,5 +1,4 @@
 // src/core/Game.ts
-import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
 import { EnemyManager } from '../enemy/EnemyManager';
@@ -13,12 +12,12 @@ import { SkyBox } from './SkyBox';
 import { WeaponManager } from './WeaponManager';
 
 export class Game {
-  private scene: THREE.Scene;
+  protected scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
   private camera: THREE.PerspectiveCamera;
   private clock: THREE.Clock;
   private input: InputManager;
-  private physics: PhysicsHelper;
+  protected physics: PhysicsHelper;
   private player: Player;
   private ui: UIManager;
   private paused = false;
@@ -26,7 +25,7 @@ export class Game {
   private isFiring: boolean = false;
   private projectileManager: ProjectileManager;
   private weaponManager: WeaponManager;
-  private enemyManager: EnemyManager;
+  protected enemyManager: EnemyManager;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -41,7 +40,6 @@ export class Game {
     this.input = new InputManager();
 
     this.physics = new PhysicsHelper();
-    this.physics.createFloorCollider(new RAPIER.Vector3(0, -0.5, 0), new RAPIER.Vector3(50, 1, 50));
 
     this.player = new Player(this.scene, this.input, this.physics);
     this.camera = this.player.getCamera();
@@ -54,12 +52,8 @@ export class Game {
     );
     // Weapon system: manage multiple weapon types
     this.weaponManager = new WeaponManager(this.projectileManager);
-
-    this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
-
-    this.addTestFloor();
+    // Initialize level-specific setup
+    this.initLevel();
     window.addEventListener('resize', () => this.onWindowResize());
 
     this.ui = new UIManager();
@@ -136,18 +130,11 @@ export class Game {
     });
   }
 
-  private addTestFloor() {
-    const floor = new THREE.Mesh(
-      new THREE.BoxGeometry(50, 1, 50),
-      new THREE.MeshStandardMaterial({ color: 0x555555 }),
-    );
-    floor.position.y = -0.5;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
-
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 5);
-    this.scene.add(light);
+  /**
+   * Level-specific initialization; override in subclasses to set up level geometry, colliders, and actors.
+   */
+  protected initLevel(): void {
+    // no-op default implementation
   }
 
   private onWindowResize() {

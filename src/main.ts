@@ -1,6 +1,6 @@
 // /src/main.ts
 import './style.css';
-import { Game } from './core/Game';
+import { DevLevel } from './levels/DevLevel';
 
-const game = new Game();
+const game = new DevLevel();
 game.start();
