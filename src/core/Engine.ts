@@ -69,8 +69,9 @@ export class Engine {
       }
     });
 
-    // Skybox
-    new SkyBox(this.renderer, this.scene, '/skybox/');
+    // Skybox load from public folder
+    const basePath = import.meta.env.BASE_URL;
+    new SkyBox(this.renderer, this.scene, `${basePath}skybox/`);
 
     // Handle resize
     window.addEventListener('resize', () => this.onWindowResize());
