@@ -3,8 +3,7 @@ import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
 import { EnemyManager } from '../enemy/EnemyManager';
-import { CameraRig } from '../player/CameraRig';
-import { PlayerController } from '../player/PlayerController';
+import { Player } from '../player/Player';
 import { UIManager } from '../ui/UIManager';
 
 import { InputManager } from './InputManager';
@@ -19,10 +18,8 @@ export class Game {
   private camera: THREE.PerspectiveCamera;
   private clock: THREE.Clock;
   private input: InputManager;
-  private cameraRig: CameraRig;
-  private playerController: PlayerController;
   private physics: PhysicsHelper;
-  private playerBody: RAPIER.RigidBody;
+  private player: Player;
   private ui: UIManager;
   private paused = false;
   // True while left mouse button is held down for automatic fire
@@ -40,28 +37,14 @@ export class Game {
     // Load and apply a pluggable skybox (background + environment lighting)
     new SkyBox(this.renderer, this.scene, '/skybox/');
 
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
-    );
     this.clock = new THREE.Clock();
     this.input = new InputManager();
 
-    this.cameraRig = new CameraRig(this.camera);
-    this.scene.add(this.cameraRig.object);
-
     this.physics = new PhysicsHelper();
-    this.playerBody = this.physics.createPlayerBody(new RAPIER.Vector3(0, 2, 0));
     this.physics.createFloorCollider(new RAPIER.Vector3(0, -0.5, 0), new RAPIER.Vector3(50, 1, 50));
 
-    this.playerController = new PlayerController(
-      this.cameraRig,
-      this.input,
-      this.playerBody,
-      this.physics.world,
-    );
+    this.player = new Player(this.scene, this.input, this.physics);
+    this.camera = this.player.getCamera();
 
     this.enemyManager = new EnemyManager(this.scene, this.physics.world);
     this.projectileManager = new ProjectileManager(
@@ -192,9 +175,8 @@ export class Game {
     if (this.weaponManager.tryFire(origin, direction, time)) {
       const opts = this.weaponManager.getCurrentWeapon().getOptions();
       const recoilVert = opts.recoil ?? 0;
-      this.cameraRig.rotatePitch(recoilVert);
       const recoilHorz = (Math.random() - 0.5) * recoilVert;
-      this.cameraRig.rotateYaw(recoilHorz);
+      this.player.applyRecoil(recoilVert, recoilHorz);
     }
   }
 
@@ -212,17 +194,11 @@ export class Game {
     if (this.isFiring) {
       this.shoot();
     }
-    this.playerController.update();
+    this.player.update();
     this.projectileManager.update(delta);
     // Handle collisions with the environment (floor, walls, etc.)
     this.projectileManager.handleCollisions(this.physics.eventQueue);
     this.enemyManager.update();
-    this.syncGraphicsToPhysics();
     this.renderer.render(this.scene, this.camera);
   };
-
-  private syncGraphicsToPhysics() {
-    const pos = this.playerBody.translation();
-    this.cameraRig.position.set(pos.x, pos.y, pos.z);
-  }
 }
