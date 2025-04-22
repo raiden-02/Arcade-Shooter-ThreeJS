@@ -1,26 +1,51 @@
 name: Deploy to GitHub Pages
+
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read # Allows checkout
+  pages: write # Allows deployment to GitHub Pages
+  id-token: write # Required for OIDC deployment
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Allow pushing to gh-pages branch
-      pages: write # Allow deployment of GitHub Pages
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: true # use GITHUB_TOKEN for git push
-      - uses: actions/setup-node@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npm ci
-      - run: npm run lint-format-build
-      - uses: peaceiris/actions-gh-pages@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run lint-format-build
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
