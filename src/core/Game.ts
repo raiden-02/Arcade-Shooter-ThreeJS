@@ -5,7 +5,7 @@ import { EnemyManager } from '../enemy/EnemyManager';
 import { Player } from '../player/Player';
 import { UIManager } from '../ui/UIManager';
 
-import { InputManager } from './InputManager';
+import { InputManager, InputAction } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
 import { ProjectileManager } from './ProjectileManager';
 import { SkyBox } from './SkyBox';
@@ -60,26 +60,6 @@ export class Game {
     // Initialize weapon info display for the default weapon
     const initialWeapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());
-    // Handle automatic firing when left mouse button is held
-    window.addEventListener('mousedown', e => {
-      if (
-        e.button === 0 &&
-        !this.paused &&
-        document.pointerLockElement === this.renderer.domElement
-      ) {
-        const opts = this.weaponManager.getCurrentWeapon().getOptions();
-        if (opts.automatic) {
-          this.isFiring = true;
-        } else {
-          this.shoot();
-        }
-      }
-    });
-    window.addEventListener('mouseup', e => {
-      if (e.button === 0) {
-        this.isFiring = false;
-      }
-    });
 
     document.addEventListener('pointerlockchange', () => {
       const canvas = this.renderer.domElement;
@@ -178,8 +158,18 @@ export class Game {
     const delta = this.clock.getDelta();
 
     this.physics.step(delta);
-    if (this.isFiring) {
-      this.shoot();
+    // Handle firing input (automatic vs. semi-auto)
+    const firePressed = this.input.isPressed(InputAction.Fire);
+    const currentOpts = this.weaponManager.getCurrentWeapon().getOptions();
+    if (firePressed) {
+      if (currentOpts.automatic) {
+        this.shoot();
+      } else if (!this.isFiring) {
+        this.shoot();
+        this.isFiring = true;
+      }
+    } else {
+      this.isFiring = false;
     }
     this.player.update();
     this.projectileManager.update(delta);
