@@ -7,6 +7,8 @@ export class UIManager {
   pauseMenu: PauseMenu;
   hud: HUD;
   weaponInfo: HTMLDivElement;
+  // Health info display
+  healthInfo: HTMLDivElement;
 
   constructor() {
     this.pauseMenu = new PauseMenu();
@@ -28,18 +30,37 @@ export class UIManager {
       z-index: 500;
     `;
     document.body.appendChild(this.weaponInfo);
+    // Health info display
+    this.healthInfo = document.createElement('div');
+    this.healthInfo.id = 'health-info';
+    this.healthInfo.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 500;
+    `;
+    document.body.appendChild(this.healthInfo);
   }
 
   showPause() {
     this.pauseMenu.show();
     this.hud.hide();
     this.weaponInfo.style.display = 'none';
+    this.healthInfo.style.display = 'none';
   }
 
   hidePause() {
     this.pauseMenu.hide();
     this.hud.show();
     this.weaponInfo.style.display = 'block';
+    this.healthInfo.style.display = 'block';
   }
 
   togglePause() {
@@ -66,5 +87,11 @@ export class UIManager {
       html += `Spread: ${pelletSpreadDeg}&deg;`;
     }
     this.weaponInfo.innerHTML = html;
+  }
+  /**
+   * Update top-left health display.
+   */
+  public updateHealth(current: number, max: number): void {
+    this.healthInfo.innerHTML = `<strong>Health</strong><br>${current} / ${max}`;
   }
 }
