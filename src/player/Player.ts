@@ -19,6 +19,9 @@ export class Player {
   private model: THREE.Mesh;
   private body: RAPIER.RigidBody;
   private controller: PlayerController;
+  // Player health
+  private maxHealth: number;
+  private health: number;
 
   /**
    * @param scene - The Three.js scene to which the player is added.
@@ -58,6 +61,9 @@ export class Player {
 
     // Create controller to handle input and movement
     this.controller = new PlayerController(this.cameraRig, input, this.body, physics.world);
+    // Initialize health
+    this.maxHealth = 100;
+    this.health = this.maxHealth;
   }
 
   /**
@@ -88,5 +94,29 @@ export class Player {
 
     // Align model orientation (yaw) with camera rig
     this.model.rotation.y = this.cameraRig.object.rotation.y;
+  }
+  /**
+   * Get current health.
+   */
+  public getHealth(): number {
+    return this.health;
+  }
+  /**
+   * Get maximum health.
+   */
+  public getMaxHealth(): number {
+    return this.maxHealth;
+  }
+  /**
+   * Apply damage to the player.
+   */
+  public takeDamage(amount: number): void {
+    this.health = Math.max(0, this.health - amount);
+  }
+  /**
+   * Heal the player.
+   */
+  public heal(amount: number): void {
+    this.health = Math.min(this.maxHealth, this.health + amount);
   }
 }

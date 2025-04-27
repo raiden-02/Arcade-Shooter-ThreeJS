@@ -82,6 +82,8 @@ export class DevLevel extends BaseScene {
     // Update initial UI for weapon
     const initial = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initial.getName(), initial.getOptions());
+    // Update initial UI for player health
+    this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
     // Weapon switching input
     window.addEventListener('keydown', this.onKeyDown);
   }
@@ -109,6 +111,8 @@ export class DevLevel extends BaseScene {
     this.projectileManager.update(delta);
     this.projectileManager.handleCollisions(this.physics.eventQueue);
     this.enemyManager.update();
+    // Update player health in UI
+    this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
   }
 
   /**
