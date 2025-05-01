@@ -32,6 +32,8 @@
     "@dimforge/rapier3d": "^0.15.0",
     "ecs-three": "^1.0.20",
     "ecsy": "^0.4.2",
-    "three": "^0.174.0"
+    "three": "^0.174.0",
+    "three-pathfinding": "^1.1.4",
+    "yuka": "^0.12.0"
   }
 }

@@ -6,6 +6,8 @@ import { UIManager } from '../ui/UIManager';
 import { GameStateMachine, GameState } from './GameStateMachine';
 import { InputManager } from './InputManager';
 import { PhysicsHelper } from './PhysicsHelper';
+import { NavMeshService } from './NavMeshService';
+import { EntityManager } from 'yuka';
 import { IScene } from './Scene';
 import { SkyBox } from './SkyBox';
 
@@ -19,6 +21,7 @@ export class Engine {
   public input: InputManager;
   public physics: PhysicsHelper;
   public ui: UIManager;
+  public navMesh: NavMeshService;
   private currentScene: IScene | null = null;
   private clock: THREE.Clock;
   public getTime(): number {
@@ -72,6 +75,13 @@ export class Engine {
     // Skybox load from public folder
     const basePath = import.meta.env.BASE_URL;
     new SkyBox(this.renderer, this.scene, `${basePath}skybox/`);
+    // Initialize NavMeshService for pathfinding (expect navmesh at public/navmesh/navmesh.glb)
+    this.navMesh = new NavMeshService(this.scene);
+    this.navMesh.load(`${basePath}navmesh/navmesh.glb`)
+      .then(() => console.log('NavMesh loaded successfully'))
+      .catch(err => console.error('Failed to load NavMesh:', err));
+    // Yuka AI: entity manager for steering behaviors and state machines
+    this.entityManager = new EntityManager();
 
     // Handle resize
     window.addEventListener('resize', () => this.onWindowResize());
@@ -128,6 +138,8 @@ export class Engine {
     if (this.currentScene) {
       this.currentScene.update(delta);
     }
+    // Update Yuka AI entities
+    this.entityManager.update(delta);
     this.renderer.render(this.scene, this.camera);
   };
 
