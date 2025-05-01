@@ -11,13 +11,17 @@ import { PlayerController } from './PlayerController';
 /**
  * Represents the player entity, including 3D model, physics body, camera, and controller.
  */
+// Augmented rigid body with collider reference
+type BodyWithCollider = RAPIER.RigidBody & { _collider: RAPIER.Collider };
 export class Player {
   /** Root object for all player components. */
   public root: THREE.Object3D;
   private camera: THREE.PerspectiveCamera;
   private cameraRig: CameraRig;
   private model: THREE.Mesh;
-  private body: RAPIER.RigidBody;
+  private body: BodyWithCollider;
+  // Collider for player (for projectile hits)
+  private collider: RAPIER.Collider;
   private controller: PlayerController;
   // Player health
   private maxHealth: number;
@@ -56,8 +60,11 @@ export class Player {
     this.model.castShadow = true;
     this.root.add(this.model);
 
-    // Create physics body for the player
-    this.body = physics.createPlayerBody(spawnPos);
+    // Create physics body for the player, augmented with a collider reference
+    // The physics body is augmented with a private collider reference
+    type BodyWithCollider = RAPIER.RigidBody & { _collider: RAPIER.Collider };
+    this.body = physics.createPlayerBody(spawnPos) as BodyWithCollider;
+    this.collider = this.body._collider;
 
     // Create controller to handle input and movement
     this.controller = new PlayerController(this.cameraRig, input, this.body, physics.world);
@@ -106,6 +113,12 @@ export class Player {
    */
   public getMaxHealth(): number {
     return this.maxHealth;
+  }
+  /**
+   * Get the collider handle for collision detection.
+   */
+  public getColliderHandle(): number {
+    return this.collider.handle;
   }
   /**
    * Apply damage to the player.

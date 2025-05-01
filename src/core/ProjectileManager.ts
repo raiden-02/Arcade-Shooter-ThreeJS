@@ -3,6 +3,7 @@ import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
 import { EnemyManager } from '../enemy/EnemyManager';
+import { Player } from '../player/Player';
 
 import { drawDebugLine } from './DebugHelper';
 import { Projectile } from './Projectile';
@@ -12,11 +13,19 @@ export class ProjectileManager {
   // How long to keep non-explosive shell meshes before cleanup (ms)
   private shellCleanupTimeMs: number = 5000;
 
+  // Reference to player for enemy projectile collisions
+  private player?: Player;
   constructor(
     private scene: THREE.Scene,
     private world: RAPIER.World,
     private enemyManager?: EnemyManager,
   ) {}
+  /**
+   * Set the player reference to handle enemy projectile hits.
+   */
+  public setPlayer(player: Player): void {
+    this.player = player;
+  }
   /**
    * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
    */
@@ -69,19 +78,24 @@ export class ProjectileManager {
           break;
         } else {
           // Non-explosive: two colliders
-          // 1) Sensor for enemy hits
+          // 1) Sensor-based hits (player or enemy)
           const sensor = projectile.sensorCollider?.handle;
           if (sensor != null && (h1 === sensor || h2 === sensor)) {
-            // Direct enemy hit via sensor
-            const enemyHit = this.enemyManager?.enemies.find(
-              e => e.collider.handle === (h1 === sensor ? h2 : h1),
-            );
-            if (enemyHit && !enemyHit.isDead) {
-              enemyHit.takeDamage(projectile.damage);
+            const other = h1 === sensor ? h2 : h1;
+            if (projectile.ownerType === 'player') {
+              // Player-fired: check enemy hit
+              const enemyHit = this.enemyManager?.enemies.find(e => e.collider.handle === other);
+              if (enemyHit && !enemyHit.isDead) {
+                enemyHit.takeDamage(projectile.damage);
+              }
+            } else if (projectile.ownerType === 'enemy' && this.player) {
+              // Enemy-fired: check player hit
+              if (other === this.player.getColliderHandle()) {
+                this.player.takeDamage(projectile.damage);
+              }
             }
-            // Deactivate shell
+            // Deactivate shell and schedule cleanup
             projectile.active = false;
-            // Schedule cleanup after bounce lifetime
             setTimeout(() => {
               this.world.removeRigidBody(projectile.body);
               this.scene.remove(projectile.mesh);
@@ -125,11 +139,11 @@ export class ProjectileManager {
     },
   ) {
     // Use provided options or fall back to Projectile defaults
-    const speedVal = options?.speed ?? undefined;
-    const radiusVal = options?.radius ?? undefined;
-    const lengthVal = options?.length ?? undefined;
-    const damageVal = options?.damage ?? undefined;
-    const explosionRadiusVal = options?.explosionRadius ?? undefined;
+    const speedVal = options?.speed;
+    const radiusVal = options?.radius;
+    const lengthVal = options?.length;
+    const damageVal = options?.damage;
+    const explosionRadiusVal = options?.explosionRadius;
     const projectile = new Projectile(
       this.scene,
       this.world,
@@ -186,5 +200,60 @@ export class ProjectileManager {
         }
       }
     }
+  }
+  /**
+   * Set the enemy manager for handling projectile-enemy interactions.
+   */
+  public setEnemyManager(enemyManager: EnemyManager): void {
+    this.enemyManager = enemyManager;
+  }
+  /**
+   * Get all active projectiles.
+   */
+  public getProjectiles(): Projectile[] {
+    return this.projectiles;
+  }
+  /**
+   * Remove a projectile from the manager.
+   */
+  public removeProjectile(proj: Projectile): void {
+    this.projectiles = this.projectiles.filter(p => p !== proj);
+  }
+  /**
+   * Fire a projectile as an enemy (flags owner as enemy for collision logic).
+   */
+  public fireEnemy(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    options?: {
+      speed?: number;
+      radius?: number;
+      length?: number;
+      damage?: number;
+      explosionRadius?: number;
+    },
+  ): void {
+    const speedVal = options?.speed;
+    const radiusVal = options?.radius;
+    const lengthVal = options?.length;
+    const damageVal = options?.damage;
+    const explosionRadiusVal = options?.explosionRadius;
+    const projectile = new Projectile(
+      this.scene,
+      this.world,
+      origin,
+      direction,
+      speedVal,
+      radiusVal,
+      lengthVal,
+      damageVal,
+      explosionRadiusVal,
+      'enemy',
+    );
+    this.projectiles.push(projectile);
+    // Draw debug line for enemy fire
+    const debugLength = 10;
+    const end = origin.clone().add(direction.clone().normalize().multiplyScalar(debugLength));
+    drawDebugLine(this.scene, origin, end, 0xff0000, 2);
   }
 }

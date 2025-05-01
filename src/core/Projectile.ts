@@ -23,6 +23,8 @@ export class Projectile {
 
   // Whether the projectile can still deal damage/explode
   public active: boolean = true;
+  // Owner of this projectile ('player' or 'enemy') for filtering collisions
+  public ownerType: 'player' | 'enemy';
   constructor(
     scene: THREE.Scene,
     world: RAPIER.World,
@@ -35,7 +37,10 @@ export class Projectile {
     damage: number = 50,
     // optional explosion radius for AOE
     explosionRadius?: number,
+    // mark ownership for collision filtering
+    ownerType: 'player' | 'enemy' = 'player',
   ) {
+    this.ownerType = ownerType;
     this.explosionRadius = explosionRadius;
     const debugScale: number = 1; // scale for debug purposes
     this.radius = radius * debugScale;
@@ -62,11 +67,14 @@ export class Projectile {
 
     // Set up colliders: split sensor + physical for shells, single for explosives
     const halfheight = this.length / 2;
+    // Determine which group this projectile should hit
+    const targetGroup =
+      this.ownerType === 'player' ? CollisionGroups.ENEMY : CollisionGroups.PLAYER;
     if (this.explosionRadius == null) {
-      // Non-explosive projectile: sensor for enemy hits
+      // Non-explosive projectile: sensor for direct hits on target
       const sensorDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight)
         .setSensor(true)
-        .setCollisionGroups((CollisionGroups.PROJECTILE << 16) | CollisionGroups.ENEMY)
+        .setCollisionGroups((CollisionGroups.PROJECTILE << 16) | targetGroup)
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
       this.sensorCollider = world.createCollider(sensorDesc, this.body);
       // Physical collider: collides with world for bounce only
@@ -78,11 +86,10 @@ export class Projectile {
       // Use sensor as main collider for scripting
       this.collider = this.sensorCollider;
     } else {
-      // Explosive projectile: one collider for both enemy and world
+      // Explosive projectile: one collider for both target and world
+      const mask = targetGroup | CollisionGroups.DEFAULT;
       const explDesc = RAPIER.ColliderDesc.capsule(this.radius, halfheight)
-        .setCollisionGroups(
-          (CollisionGroups.PROJECTILE << 16) | CollisionGroups.ENEMY | CollisionGroups.DEFAULT,
-        )
+        .setCollisionGroups((CollisionGroups.PROJECTILE << 16) | mask)
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
       this.collider = world.createCollider(explDesc, this.body);
     }

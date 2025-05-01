@@ -67,12 +67,18 @@ export class DevLevel extends BaseScene {
     const playerCam = this.player.getCamera();
     this.engine.camera = playerCam;
     this.camera = playerCam;
-    this.enemyManager = new EnemyManager(this.scene, this.physics.world);
-    this.projectileManager = new ProjectileManager(
+    // Set up projectile and enemy systems with AI
+    this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
+    this.enemyManager = new EnemyManager(
       this.scene,
       this.physics.world,
-      this.enemyManager,
+      this.projectileManager,
+      this.player,
+      this.camera,
     );
+    this.projectileManager.setEnemyManager(this.enemyManager);
+    // Provide player reference for projectile collision handling
+    this.projectileManager.setPlayer(this.player);
     this.weaponManager = new WeaponManager(this.projectileManager);
 
     // Spawn placeholder enemies
@@ -110,7 +116,8 @@ export class DevLevel extends BaseScene {
     this.player.update();
     this.projectileManager.update(delta);
     this.projectileManager.handleCollisions(this.physics.eventQueue);
-    this.enemyManager.update();
+    // Update enemies (movement, shooting, UI)
+    this.enemyManager.update(delta, this.engine.getTime());
     // Update player health in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
   }

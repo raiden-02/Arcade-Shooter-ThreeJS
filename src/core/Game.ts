@@ -44,12 +44,17 @@ export class Game {
     this.player = new Player(this.scene, this.input, this.physics);
     this.camera = this.player.getCamera();
 
-    this.enemyManager = new EnemyManager(this.scene, this.physics.world);
-    this.projectileManager = new ProjectileManager(
+    // Create projectile manager first, then enemy manager, then wire them together
+    this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
+    this.enemyManager = new EnemyManager(
       this.scene,
       this.physics.world,
-      this.enemyManager,
+      this.projectileManager,
+      this.player,
+      this.camera,
     );
+    // Link enemyManager into projectileManager for collision handling
+    this.projectileManager.setEnemyManager(this.enemyManager);
     // Weapon system: manage multiple weapon types
     this.weaponManager = new WeaponManager(this.projectileManager);
     // Initialize level-specific setup
@@ -156,6 +161,7 @@ export class Game {
     }
 
     const delta = this.clock.getDelta();
+    const elapsedTime = this.clock.getElapsedTime();
 
     this.physics.step(delta);
     // Handle firing input (automatic vs. semi-auto)
@@ -175,7 +181,7 @@ export class Game {
     this.projectileManager.update(delta);
     // Handle collisions with the environment (floor, walls, etc.)
     this.projectileManager.handleCollisions(this.physics.eventQueue);
-    this.enemyManager.update();
+    this.enemyManager.update(delta, elapsedTime);
     this.renderer.render(this.scene, this.camera);
   };
 }
