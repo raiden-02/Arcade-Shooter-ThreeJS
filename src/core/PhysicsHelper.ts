@@ -41,16 +41,25 @@ export class PhysicsHelper {
     this.world.createCollider(colliderDesc, body);
   }
 
+  /**
+   * Create a dynamic body for the player with a capsule collider.
+   * The returned body is augmented with a `collider` property for lookup.
+   */
   createPlayerBody(pos: RAPIER.Vector3) {
     const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(pos.x, pos.y, pos.z)
-      .setLinearDamping(0.99); // Slow down sliding a bit
+      .setLinearDamping(0.99);
 
-    const body = this.world.createRigidBody(bodyDesc);
+    // Create the body and collider
+    type BodyWithCollider = RAPIER.RigidBody & { _collider: RAPIER.Collider };
+    const body = this.world.createRigidBody(bodyDesc) as BodyWithCollider;
     const colliderDesc = RAPIER.ColliderDesc.capsule(0.8, 0.4).setCollisionGroups(
-      (CollisionGroups.PLAYER << 16) | CollisionGroups.DEFAULT | CollisionGroups.ENEMY,
+      (CollisionGroups.PLAYER << 16) |
+        CollisionGroups.DEFAULT |
+        CollisionGroups.ENEMY |
+        CollisionGroups.PROJECTILE,
     );
-    this.world.createCollider(colliderDesc, body);
+    body._collider = this.world.createCollider(colliderDesc, body);
 
     return body;
   }
