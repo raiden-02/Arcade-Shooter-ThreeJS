@@ -56,6 +56,14 @@ export class DevLevel extends BaseScene {
     floorMesh.position.set(0, -0.5, 0);
     floorMesh.receiveShadow = true;
     this.scene.add(floorMesh);
+    // Add a demo wall for line-of-sight visualization
+    const wallGeom = new THREE.BoxGeometry(1, 5, 20);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    const wall = new THREE.Mesh(wallGeom, wallMat);
+    wall.position.set(0, 2.5, -15);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    this.scene.add(wall);
 
     // Add a directional light
     const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -83,8 +91,8 @@ export class DevLevel extends BaseScene {
 
     // Spawn placeholder enemies
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
+    // this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
+    // this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
     // Update initial UI for weapon
     const initial = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initial.getName(), initial.getOptions());

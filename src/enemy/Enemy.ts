@@ -27,6 +27,8 @@ export class Enemy {
   private weaponOpts: WeaponOptions;
   private fireRate: number;
   private lastShotTime: number = 0;
+  // Distance to maintain from player before stopping
+  private standoffDistance: number;
   private uiElement: HTMLDivElement;
 
   constructor(
@@ -53,7 +55,11 @@ export class Enemy {
     const idx = Math.floor(Math.random() * weaponClasses.length);
     const weapon = new weaponClasses[idx](projectileManager);
     this.weaponOpts = weapon.getOptions();
-    this.fireRate = this.weaponOpts.fireRate;
+    // Limit AI fire rate to 1 shot per second
+    this.fireRate = 0.5;
+    this.lastShotTime = 0;
+    // Random stand-off distance between 5 and 15 units
+    this.standoffDistance = 5 + Math.random() * 10;
     this.lastShotTime = 0;
     // Create health bar UI element
     this.uiElement = document.createElement('div');
@@ -89,17 +95,22 @@ export class Enemy {
   update(_delta: number, elapsedTime: number) {
     if (this.isDead) return;
 
-    // Basic movement: chase player on XZ plane
+    // Basic movement: chase player on XZ plane until within standoffDistance
     const pos = this.body.translation();
     const playerPos = this.player.root.position;
     const chaseDir = new THREE.Vector3(playerPos.x - pos.x, 0, playerPos.z - pos.z);
-    if (chaseDir.lengthSq() > 0.1) {
+    const distSq = chaseDir.lengthSq();
+    if (distSq > this.standoffDistance * this.standoffDistance) {
       chaseDir.normalize();
       const moveSpeed = 2;
       this.body.setLinvel(
         { x: chaseDir.x * moveSpeed, y: this.body.linvel().y, z: chaseDir.z * moveSpeed },
         true,
       );
+    } else {
+      // Stop horizontal movement within stand-off range
+      const vel = this.body.linvel();
+      this.body.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
     }
 
     // Sync mesh transform to physics
@@ -151,7 +162,7 @@ export class Enemy {
     this.mesh.geometry.dispose();
     (this.mesh.material as THREE.Material).dispose();
     this.mesh.removeFromParent();
-    // Remove UI element
+    // Remove UI elementw
     this.uiElement.remove();
 
     // Remove from physics world
