@@ -2,6 +2,7 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { CollisionGroups } from '../core/CollisionGroups';
 import { Engine } from '../core/Engine';
 import { InputAction } from '../core/InputManager';
 import { ProjectileManager } from '../core/ProjectileManager';
@@ -61,6 +62,38 @@ export class DevLevel extends BaseScene {
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 10, 5);
     this.scene.add(light);
+    // Create simple obstacles (walls and cover) for testing AI navigation and cover
+    const addObstacle = (pos: THREE.Vector3, size: THREE.Vector3, color = 0x888888) => {
+      // Mesh
+      const geom = new THREE.BoxGeometry(size.x, size.y, size.z);
+      const mat = new THREE.MeshStandardMaterial({ color });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.copy(pos);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+      // Physics collider (static)
+      const bodyDesc = RAPIER.RigidBodyDesc.fixed();
+      const body = this.physics.world.createRigidBody(bodyDesc);
+      const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x / 2, size.y / 2, size.z / 2)
+        .setTranslation(pos.x, pos.y, pos.z)
+        .setCollisionGroups(
+          (CollisionGroups.DEFAULT << 16) |
+            CollisionGroups.PLAYER |
+            CollisionGroups.ENEMY |
+            CollisionGroups.PROJECTILE,
+        )
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
+      this.physics.world.createCollider(colliderDesc, body);
+    };
+    // Walls
+    addObstacle(new THREE.Vector3(0, 2.5, -15), new THREE.Vector3(20, 5, 1));
+    addObstacle(new THREE.Vector3(-15, 2.5, 0), new THREE.Vector3(1, 5, 20));
+    addObstacle(new THREE.Vector3(15, 2.5, 0), new THREE.Vector3(1, 5, 20));
+    // Cover crates
+    addObstacle(new THREE.Vector3(5, 0.5, -5), new THREE.Vector3(2, 1, 2), 0x336633);
+    addObstacle(new THREE.Vector3(-5, 0.5, 5), new THREE.Vector3(2, 1, 2), 0x663333);
+    addObstacle(new THREE.Vector3(0, 0.5, 0), new THREE.Vector3(2, 1, 2), 0x333366);
     // Create player and gameplay systems
     this.player = new Player(this.scene, this.input, this.physics);
     // Use player camera for rendering and raycasting
