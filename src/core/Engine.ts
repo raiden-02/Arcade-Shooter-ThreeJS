@@ -1,13 +1,13 @@
 // src/core/Engine.ts
 import * as THREE from 'three';
+import { EntityManager } from 'yuka';
 
 import { UIManager } from '../ui/UIManager';
 
 import { GameStateMachine, GameState } from './GameStateMachine';
 import { InputManager } from './InputManager';
-import { PhysicsHelper } from './PhysicsHelper';
 import { NavMeshService } from './NavMeshService';
-import { EntityManager } from 'yuka';
+import { PhysicsHelper } from './PhysicsHelper';
 import { IScene } from './Scene';
 import { SkyBox } from './SkyBox';
 
@@ -22,6 +22,8 @@ export class Engine {
   public physics: PhysicsHelper;
   public ui: UIManager;
   public navMesh: NavMeshService;
+  // Yuka AI entity manager for steering behaviors and FSMs
+  public entityManager: EntityManager;
   private currentScene: IScene | null = null;
   private clock: THREE.Clock;
   public getTime(): number {
@@ -77,7 +79,8 @@ export class Engine {
     new SkyBox(this.renderer, this.scene, `${basePath}skybox/`);
     // Initialize NavMeshService for pathfinding (expect navmesh at public/navmesh/navmesh.glb)
     this.navMesh = new NavMeshService(this.scene);
-    this.navMesh.load(`${basePath}navmesh/navmesh.glb`)
+    this.navMesh
+      .load(`${basePath}navmesh/navmesh.glb`)
       .then(() => console.log('NavMesh loaded successfully'))
       .catch(err => console.error('Failed to load NavMesh:', err));
     // Yuka AI: entity manager for steering behaviors and state machines

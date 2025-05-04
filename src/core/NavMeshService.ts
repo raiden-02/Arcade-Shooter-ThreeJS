@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from 'three';
-import { Pathfinding } from 'three-pathfinding';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { Pathfinding } from 'three-pathfinding';
 
 /**
  * Service to load and query a NavMesh using three-pathfinding.
@@ -22,9 +23,11 @@ export class NavMeshService {
       const loader = new GLTFLoader();
       loader.load(
         url,
-        gltf => {
+        (gltf: any) => {
           // Assume the first mesh is the navigation mesh
-          const mesh = gltf.scene.children.find(c => c instanceof THREE.Mesh) as THREE.Mesh;
+          const mesh = (gltf.scene.children as any[]).find(
+            (c: any) => c instanceof THREE.Mesh,
+          ) as THREE.Mesh;
           if (!mesh) {
             reject(new Error('NavMesh mesh not found in GLTF'));
             return;
@@ -39,7 +42,7 @@ export class NavMeshService {
           resolve();
         },
         undefined,
-        error => reject(error),
+        (error: any) => reject(error),
       );
     });
   }
@@ -59,6 +62,6 @@ export class NavMeshService {
     if (!this.ready) return [];
     const group = this.pathfinder.getGroup(this.zone, origin);
     const rawPath = this.pathfinder.findPath(origin, target, this.zone, group) || [];
-    return rawPath.map(p => new THREE.Vector3(p.x, p.y, p.z));
+    return rawPath.map((p: any) => new THREE.Vector3(p.x, p.y, p.z));
   }
 }
