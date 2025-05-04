@@ -63,8 +63,9 @@ export class Enemy {
     this.lastShotTime = 0;
     // Create health bar UI element
     this.uiElement = document.createElement('div');
+    // Health bar overlay: fixed to viewport, hidden off-screen if enemy not in view
     this.uiElement.style.cssText =
-      'position:absolute;background:red;height:5px;width:50px;transform:translate(-50%,-120%);pointer-events:none;z-index:500;';
+      'position:fixed; background:red; height:5px; width:50px; transform:translate(-50%,-120%); pointer-events:none; z-index:500;';
     document.body.appendChild(this.uiElement);
     // Mesh geometry (can be replaced with GLTF later)
     const geometry = new THREE.CapsuleGeometry(0.5, 1.0);
@@ -136,15 +137,21 @@ export class Enemy {
       });
     }
 
-    // Update health bar UI
+    // Update health bar UI: width and screen position, hide if off-screen
     const healthPct = Math.max(this.health, 0) / 100;
     this.uiElement.style.width = `${50 * healthPct}px`;
-    // Project UI position to screen coordinates
+    // Project mesh world position to normalized device coords
     const screenPos = this.mesh.position.clone().project(this.camera);
-    const x = ((screenPos.x + 1) / 2) * window.innerWidth;
-    const y = ((1 - screenPos.y) / 2) * window.innerHeight;
-    this.uiElement.style.left = `${x}px`;
-    this.uiElement.style.top = `${y}px`;
+    // If outside view frustum, hide the bar
+    if (screenPos.x < -1 || screenPos.x > 1 || screenPos.y < -1 || screenPos.y > 1) {
+      this.uiElement.style.display = 'none';
+    } else {
+      this.uiElement.style.display = 'block';
+      const x = ((screenPos.x + 1) / 2) * window.innerWidth;
+      const y = ((1 - screenPos.y) / 2) * window.innerHeight;
+      this.uiElement.style.left = `${x}px`;
+      this.uiElement.style.top = `${y}px`;
+    }
   }
 
   takeDamage(amount: number) {
