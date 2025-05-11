@@ -16,10 +16,11 @@ import { Player } from '../player/Player';
 
 export class Enemy {
   mesh: THREE.Mesh;
-  body: RAPIER.RigidBody;
+  private charController: RAPIER.KinematicCharacterController;
+  collider: RAPIER.Collider;
+  private world: RAPIER.World;
   health: number = 100;
   isDead: boolean = false;
-  collider: RAPIER.Collider;
   // References for AI and UI
   private projectileManager: ProjectileManager;
   private player: Player;
@@ -39,10 +40,10 @@ export class Enemy {
     player: Player,
     camera: THREE.PerspectiveCamera,
   ) {
-    // Store AI references and equip a random weapon
     this.projectileManager = projectileManager;
     this.player = player;
     this.camera = camera;
+    this.world = world;
     // Choose random bullet weapon
     const weaponClasses = [
       Pistol,
@@ -61,6 +62,17 @@ export class Enemy {
     // Random stand-off distance between 5 and 15 units
     this.standoffDistance = 5 + Math.random() * 10;
     this.lastShotTime = 0;
+    // Create kinematic controller and capsule collider for enemy
+    // Small offset ensures stability near surfaces
+    this.charController = this.world.createCharacterController(0.1);
+    const enemyColliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.5)
+      .setTranslation(position.x, position.y, position.z)
+      .setCollisionGroups(
+        (CollisionGroups.ENEMY << 16) | CollisionGroups.PROJECTILE | CollisionGroups.DEFAULT,
+      );
+    this.collider = this.world.createCollider(enemyColliderDesc);
+    // Snap to ground to keep enemy on floor
+    this.charController.enableSnapToGround(0.1);
     // Create health bar UI element
     this.uiElement = document.createElement('div');
     // Health bar overlay: fixed to viewport, hidden off-screen if enemy not in view
@@ -73,19 +85,6 @@ export class Enemy {
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.castShadow = true;
     scene.add(this.mesh);
-
-    // Physics body
-    const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(position.x, position.y, position.z)
-      .setLinearDamping(0.8);
-    this.body = world.createRigidBody(bodyDesc);
-
-    this.body.lockRotations(true, true);
-
-    const colliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.5).setCollisionGroups(
-      (CollisionGroups.ENEMY << 16) | CollisionGroups.PROJECTILE | CollisionGroups.DEFAULT,
-    );
-    this.collider = world.createCollider(colliderDesc, this.body);
   }
 
   /**
@@ -93,37 +92,42 @@ export class Enemy {
    * @param delta - time since last frame (s)
    * @param elapsedTime - total elapsed time (s)
    */
-  update(_delta: number, elapsedTime: number) {
+  update(delta: number, elapsedTime: number) {
     if (this.isDead) return;
 
     // Basic movement: chase player on XZ plane until within standoffDistance
-    const pos = this.body.translation();
     const playerPos = this.player.root.position;
-    const chaseDir = new THREE.Vector3(playerPos.x - pos.x, 0, playerPos.z - pos.z);
+    const cur = this.collider.translation();
+    const chaseDir = new THREE.Vector3(playerPos.x - cur.x, 0, playerPos.z - cur.z);
     const distSq = chaseDir.lengthSq();
+    // Compute movement with character controller (handles sliding, steps, slopes)
+    const prevPos = this.collider.translation();
+    let desiredDelta;
     if (distSq > this.standoffDistance * this.standoffDistance) {
       chaseDir.normalize();
-      const moveSpeed = 2;
-      this.body.setLinvel(
-        { x: chaseDir.x * moveSpeed, y: this.body.linvel().y, z: chaseDir.z * moveSpeed },
-        true,
-      );
+      const moveSpeed = 2 * delta;
+      desiredDelta = { x: chaseDir.x * moveSpeed, y: 0, z: chaseDir.z * moveSpeed };
     } else {
-      // Stop horizontal movement within stand-off range
-      const vel = this.body.linvel();
-      this.body.setLinvel({ x: 0, y: vel.y, z: 0 }, true);
+      // Hold position but maintain ground snap
+      desiredDelta = { x: 0, y: 0, z: 0 };
     }
-
-    // Sync mesh transform to physics
-    this.mesh.position.set(pos.x, pos.y, pos.z);
-    this.mesh.quaternion.copy(this.body.rotation());
+    this.charController.computeColliderMovement(this.collider, desiredDelta);
+    // Apply computed movement to collider and mesh
+    const movement = this.charController.computedMovement();
+    const newPos = new RAPIER.Vector3(
+      prevPos.x + movement.x,
+      prevPos.y + movement.y,
+      prevPos.z + movement.z,
+    );
+    this.collider.setTranslation(newPos);
+    this.mesh.position.set(newPos.x, newPos.y, newPos.z);
 
     // Shooting logic: fire at player if ready
-    const origin = new THREE.Vector3(pos.x, pos.y + 1.0, pos.z);
+    const origin = new THREE.Vector3(newPos.x, newPos.y + 1.0, newPos.z);
     const aimDir = new THREE.Vector3(
-      playerPos.x - pos.x,
-      playerPos.y - pos.y,
-      playerPos.z - pos.z,
+      playerPos.x - newPos.x,
+      playerPos.y - newPos.y,
+      playerPos.z - newPos.z,
     ).normalize();
     const interval = 1 / this.fireRate;
     if (elapsedTime - this.lastShotTime >= interval) {
@@ -179,8 +183,8 @@ export class Enemy {
     // Remove UI elementw
     this.uiElement.remove();
 
-    // Remove from physics world
-    this.body.setEnabled(false); // safer than removeRigidBody if you want to reuse
-    this.collider.setEnabled(false);
+    // Remove kinematic controller and collider from physics world
+    this.world.removeCharacterController(this.charController);
+    this.world.removeCollider(this.collider, true);
   }
 }

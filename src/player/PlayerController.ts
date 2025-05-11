@@ -10,18 +10,25 @@ import { CameraRig } from './CameraRig';
 export class PlayerController {
   private rig: CameraRig;
   private input: InputManager;
-  private body: RAPIER.RigidBody;
+  private controller: RAPIER.KinematicCharacterController;
+  private collider: RAPIER.Collider;
   private speed: number = 5;
   private lookSpeed: number = 0.002;
   private jumpForce: number = 6;
-  private world: RAPIER.World;
-  private canJump = true;
+  private gravity: number = 9.81;
+  private verticalVelocity: number = 0;
+  private canJump: boolean = true;
 
-  constructor(rig: CameraRig, input: InputManager, body: RAPIER.RigidBody, world: RAPIER.World) {
+  constructor(
+    rig: CameraRig,
+    input: InputManager,
+    controller: RAPIER.KinematicCharacterController,
+    collider: RAPIER.Collider,
+  ) {
     this.rig = rig;
     this.input = input;
-    this.body = body;
-    this.world = world;
+    this.controller = controller;
+    this.collider = collider;
     this.lockPointer();
   }
 
@@ -39,74 +46,65 @@ export class PlayerController {
     });
   }
 
-  private isOnGround(): boolean {
-    const origin = this.body.translation();
-
-    // Offset the origin slightly above the feet
-    const rayOrigin = new RAPIER.Vector3(origin.x, origin.y - 0.9, origin.z);
-    const rayDir = new RAPIER.Vector3(0, -1, 0);
-    const ray = new RAPIER.Ray(rayOrigin, rayDir);
-    const maxDistance = 0.2; // just enough to hit floor beneath capsule
-
-    const hit = this.world.castRay(ray, maxDistance, true);
-
-    if (!hit) return false;
-
-    const hitParent = hit.collider.parent();
-    return hitParent !== null && hitParent.handle !== this.body.handle;
-  }
-
-  update() {
-    // will want to include delta here as argument later
-    // delta = delta; // Temporary delta use workaround until we start using it
-
+  /**
+   * Update each frame: handle input, drive kinematic controller movement, and jumping.
+   * @param delta - elapsed time in seconds
+   */
+  public update(delta: number): void {
     // Mouse look
     const look = this.input.getMouseDelta();
     this.rig.rotateYaw(-look.x * this.lookSpeed);
     this.rig.rotatePitch(-look.y * this.lookSpeed);
 
-    // Movement input mapped to actions
+    // Horizontal movement input
     const dir = new THREE.Vector3();
     if (this.input.isPressed(InputAction.MoveForward)) dir.z -= 1;
     if (this.input.isPressed(InputAction.MoveBackward)) dir.z += 1;
     if (this.input.isPressed(InputAction.MoveLeft)) dir.x -= 1;
     if (this.input.isPressed(InputAction.MoveRight)) dir.x += 1;
-    const yaw = this.rig.object.rotation.y;
-    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-
-    const linearVelocity = this.body.linvel();
-
-    // Apply movement
+    let moveVec = new THREE.Vector3();
     if (dir.lengthSq() > 0) {
       dir.normalize();
-      const moveVec = new THREE.Vector3()
-        .addScaledVector(forward, -dir.z)
-        .addScaledVector(right, dir.x)
-        .normalize();
-
-      // Apply sprinting speed
+      const yaw = this.rig.object.rotation.y;
+      const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+      const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+      moveVec.addScaledVector(forward, -dir.z).addScaledVector(right, dir.x).normalize();
       const speed = this.input.isPressed(InputAction.Sprint) ? this.speed * 1.8 : this.speed;
       moveVec.multiplyScalar(speed);
-
-      // Apply only XZ velocity
-      this.body.setLinvel(new RAPIER.Vector3(moveVec.x, linearVelocity.y, moveVec.z), true);
-    } else {
-      // Reset XZ velocity instantly when no input
-      this.body.setLinvel(new RAPIER.Vector3(0, linearVelocity.y, 0), true);
     }
 
-    // console.log(this.input.isJumpPressed(), this.isOnGround());
-
-    // Jumping
-    if (this.input.isPressed(InputAction.Jump)) {
-      if (this.canJump && this.isOnGround()) {
-        const velocity = this.body.linvel();
-        this.body.setLinvel(new RAPIER.Vector3(velocity.x, this.jumpForce, velocity.z), true);
-        this.canJump = false;
-      }
-    } else {
+    // Jump initiation
+    if (
+      this.input.isPressed(InputAction.Jump) &&
+      this.canJump &&
+      this.controller.computedGrounded()
+    ) {
+      this.verticalVelocity = this.jumpForce;
+      this.canJump = false;
+    } else if (!this.input.isPressed(InputAction.Jump)) {
       this.canJump = true;
     }
+
+    // Apply gravity to vertical velocity
+    this.verticalVelocity -= this.gravity * delta;
+
+    // Desired translation delta
+    const desiredDelta = {
+      x: moveVec.x * delta,
+      y: this.verticalVelocity * delta,
+      z: moveVec.z * delta,
+    };
+    // Preserve previous position for manual translation
+    const prevPos = this.collider.translation();
+    // Compute movement with character controller (handles sliding, steps, slopes)
+    this.controller.computeColliderMovement(this.collider, desiredDelta);
+    // Apply the computed movement to the collider's translation
+    const movement = this.controller.computedMovement();
+    const newPos = new RAPIER.Vector3(
+      prevPos.x + movement.x,
+      prevPos.y + movement.y,
+      prevPos.z + movement.z,
+    );
+    this.collider.setTranslation(newPos);
   }
 }
