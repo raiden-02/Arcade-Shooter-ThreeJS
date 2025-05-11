@@ -63,4 +63,12 @@ export class PhysicsHelper {
 
     return body;
   }
+  /**
+   * Create a kinematic character controller with an optional skin width offset.
+   * Use this to drive capsule colliders via computeColliderMovement each frame.
+   * @param offset - small gap between collider and obstacles for numerical stability
+   */
+  public createCharacterController(offset: number = 0.1): RAPIER.KinematicCharacterController {
+    return this.world.createCharacterController(offset);
+  }
 }

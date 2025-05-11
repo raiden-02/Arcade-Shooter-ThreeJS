@@ -177,7 +177,7 @@ export class Game {
     } else {
       this.isFiring = false;
     }
-    this.player.update();
+    this.player.update(delta);
     this.projectileManager.update(delta);
     // Handle collisions with the environment (floor, walls, etc.)
     this.projectileManager.handleCollisions(this.physics.eventQueue);

@@ -154,7 +154,7 @@ export class DevLevel extends BaseScene {
     }
 
     // Update systems
-    this.player.update();
+    this.player.update(delta);
     this.projectileManager.update(delta);
     this.projectileManager.handleCollisions(this.physics.eventQueue);
     // Update enemies (movement, shooting, UI)

@@ -2,6 +2,7 @@
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { CollisionGroups } from '../core/CollisionGroups';
 import { InputManager } from '../core/InputManager';
 import { PhysicsHelper } from '../core/PhysicsHelper';
 
@@ -9,19 +10,16 @@ import { CameraRig } from './CameraRig';
 import { PlayerController } from './PlayerController';
 
 /**
- * Represents the player entity, including 3D model, physics body, camera, and controller.
+ * Represents the player entity, including 3D model, camera rig, and character controller.
  */
-// Augmented rigid body with collider reference
-type BodyWithCollider = RAPIER.RigidBody & { _collider: RAPIER.Collider };
 export class Player {
   /** Root object for all player components. */
   public root: THREE.Object3D;
   private camera: THREE.PerspectiveCamera;
   private cameraRig: CameraRig;
   private model: THREE.Mesh;
-  private body: BodyWithCollider;
-  // Collider for player (for projectile hits)
   private collider: RAPIER.Collider;
+  private charController: RAPIER.KinematicCharacterController;
   private controller: PlayerController;
   // Player health
   private maxHealth: number;
@@ -59,15 +57,27 @@ export class Player {
     this.model = new THREE.Mesh(geometry, material);
     this.model.castShadow = true;
     this.root.add(this.model);
-
-    // Create physics body for the player, augmented with a collider reference
-    // The physics body is augmented with a private collider reference
-    type BodyWithCollider = RAPIER.RigidBody & { _collider: RAPIER.Collider };
-    this.body = physics.createPlayerBody(spawnPos) as BodyWithCollider;
-    this.collider = this.body._collider;
+    // Create kinematic character controller and capsule collider for player
+    this.charController = physics.createCharacterController(0.1);
+    const playerColliderDesc = RAPIER.ColliderDesc.capsule(0.8, 0.4)
+      .setTranslation(spawnPos.x, spawnPos.y, spawnPos.z)
+      .setCollisionGroups(
+        (CollisionGroups.PLAYER << 16) |
+          CollisionGroups.DEFAULT |
+          CollisionGroups.ENEMY |
+          CollisionGroups.PROJECTILE,
+      );
+    this.collider = physics.world.createCollider(playerColliderDesc);
+    // Optional: snap to ground to keep player on floor
+    this.charController.enableSnapToGround(0.1);
 
     // Create controller to handle input and movement
-    this.controller = new PlayerController(this.cameraRig, input, this.body, physics.world);
+    this.controller = new PlayerController(
+      this.cameraRig,
+      input,
+      this.charController,
+      this.collider,
+    );
     // Initialize health
     this.maxHealth = 100;
     this.health = this.maxHealth;
@@ -91,14 +101,16 @@ export class Player {
   /**
    * Update player each frame: handle input, sync physics and graphics.
    */
-  public update(): void {
-    // Process input and update physics body (movement, jumping, etc.)
-    this.controller.update();
-
-    // Sync root position to physics body
-    const pos = this.body.translation();
+  /**
+   * Update player each frame: handle input, drive character controller, and sync visuals.
+   * @param delta - time since last frame (s)
+   */
+  public update(delta: number): void {
+    // Process input and drive kinematic controller
+    this.controller.update(delta);
+    // Sync root position to controller collider
+    const pos = this.collider.translation();
     this.root.position.set(pos.x, pos.y, pos.z);
-
     // Align model orientation (yaw) with camera rig
     this.model.rotation.y = this.cameraRig.object.rotation.y;
   }
