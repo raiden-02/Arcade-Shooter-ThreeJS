@@ -144,9 +144,12 @@ export class Enemy {
     const screenPos = this.mesh.position.clone().project(this.camera);
     // Hide if outside view frustum or behind camera
     const offScreen =
-      screenPos.x < -1 || screenPos.x > 1 ||
-      screenPos.y < -1 || screenPos.y > 1 ||
-      screenPos.z < 0 || screenPos.z > 1;
+      screenPos.x < -1 ||
+      screenPos.x > 1 ||
+      screenPos.y < -1 ||
+      screenPos.y > 1 ||
+      screenPos.z < 0 ||
+      screenPos.z > 1;
     if (offScreen) {
       this.uiElement.style.display = 'none';
     } else {
