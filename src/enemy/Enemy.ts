@@ -137,13 +137,17 @@ export class Enemy {
       });
     }
 
-    // Update health bar UI: width and screen position, hide if off-screen
+    // Update health bar width
     const healthPct = Math.max(this.health, 0) / 100;
     this.uiElement.style.width = `${50 * healthPct}px`;
     // Project mesh world position to normalized device coords
     const screenPos = this.mesh.position.clone().project(this.camera);
-    // If outside view frustum, hide the bar
-    if (screenPos.x < -1 || screenPos.x > 1 || screenPos.y < -1 || screenPos.y > 1) {
+    // Hide if outside view frustum or behind camera
+    const offScreen =
+      screenPos.x < -1 || screenPos.x > 1 ||
+      screenPos.y < -1 || screenPos.y > 1 ||
+      screenPos.z < 0 || screenPos.z > 1;
+    if (offScreen) {
       this.uiElement.style.display = 'none';
     } else {
       this.uiElement.style.display = 'block';
