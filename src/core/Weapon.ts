@@ -1,12 +1,13 @@
 // src/core/Weapon.ts
 import * as THREE from 'three';
 
+// Static imports of weapon GLB models (with embedded textures)
+import pistolModelUrl from '../assets/weapons/pistol_001.glb?url';
+import rifleModelUrl from '../assets/weapons/rifle_001.glb?url';
+import shotgunModelUrl from '../assets/weapons/shotgun_001.glb?url';
+import sniperModelUrl from '../assets/weapons/sniper_rifle_001.glb?url';
+
 import { ProjectileManager } from './ProjectileManager';
-// URLs for weapon GLB assets
-const sniperModelUrl = new URL('../assets/weapons/sniper_rifle_001.glb', import.meta.url).href;
-const pistolModelUrl = new URL('../assets/weapons/pistol_001.glb', import.meta.url).href;
-const rifleModelUrl = new URL('../assets/weapons/rifle_001.glb', import.meta.url).href;
-const shotgunModelUrl = new URL('../assets/weapons/shotgun_001.glb', import.meta.url).href;
 
 /**
  * Weapon parameter definitions
