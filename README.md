@@ -1,4 +1,5 @@
 <!-- README.md -->
+
 # My FPS Game
 
 Play an in-browser 3D first-person shooter built with Three.js, Rapier physics, and Vite.
@@ -7,16 +8,14 @@ Play an in-browser 3D first-person shooter built with Three.js, Rapier physics, 
 
 Click the badge below to play the latest build on GitHub Pages:
 
-[![Play Demo](https://img.shields.io/badge/Live%20Demo-Play%20Now-brightgreen)](https://<YOUR_USERNAME>.github.io/<YOUR_REPO>/)
-
-_Replace `<YOUR_USERNAME>` and `<YOUR_REPO>` with your GitHub username and repository name._
+[![Play Demo](https://img.shields.io/badge/Live%20Demo-Play%20Now-brightgreen)](https://raiden-02.github.io/Arcade-Shooter-ThreeJS/)
 
 ## 🚀 Getting Started
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
-   cd <YOUR_REPO>
+   git clone https://github.com/raiden-02/Arcade-Shooter-ThreeJS.git
+   cd Arcade-Shooter-ThreeJS
    ```
 2. Install dependencies:
    ```bash
@@ -29,18 +28,18 @@ _Replace `<YOUR_USERNAME>` and `<YOUR_REPO>` with your GitHub username and repos
 
 ## 🔧 Build & Deploy
 
- - Build for production: `npm run build`
- - Live preview: `npm run preview`
- - Deployed automatically to GitHub Pages on every push to `main` via GitHub Actions.
+- Build for production: `npm run build`
+- Live preview: `npm run preview`
+- Deployed automatically to GitHub Pages on every push to `main` via GitHub Actions.
 
 ## 🎮 Controls
 
- - Move: WASD
- - Look: Mouse
- - Fire: Left mouse button
- - Reload: R
- - Switch weapons: Number keys 1–9 or Q
- - Pause/Resume: Esc
+- Move: WASD
+- Look: Mouse
+- Fire: Left mouse button
+- Switch weapons: Number keys 1–9 or Q
+- Pause/Resume: Esc
 
 ## 📄 License
-MIT © [Your Name]
+
+MIT © [Mayur Reddy]
