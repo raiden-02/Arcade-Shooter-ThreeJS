@@ -27,16 +27,19 @@ declare module 'three-pathfinding' {
 
 // GLTFLoader from three.js examples
 declare module 'three/examples/jsm/loaders/GLTFLoader' {
-  import { Loader, Group } from 'three';
+  import { Loader, Group, AnimationClip, LoadingManager } from 'three';
   export interface GLTF {
     scene: Group;
+    animations: AnimationClip[];
   }
   export class GLTFLoader extends Loader {
+    constructor(manager?: LoadingManager);
     load(
       url: string,
       onLoad: (gltf: GLTF) => void,
       onProgress?: (event: ProgressEvent) => void,
       onError?: (event: ErrorEvent) => void,
     ): void;
+    loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<GLTF>;
   }
 }
