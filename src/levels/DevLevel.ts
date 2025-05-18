@@ -38,6 +38,7 @@ export class DevLevel extends BaseScene {
     if (switched) {
       const curr = this.weaponManager.getCurrentWeapon();
       this.ui.updateWeaponInfo(curr.getName(), curr.getOptions());
+      this.weaponView.dispose();
       const mp = curr.getOptions().modelPath;
       if (mp) {
         this.weaponView.load(mp);
