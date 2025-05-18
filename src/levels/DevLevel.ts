@@ -41,7 +41,8 @@ export class DevLevel extends BaseScene {
       this.weaponView.dispose();
       const mp = curr.getOptions().modelPath;
       if (mp) {
-        this.weaponView.load(mp);
+        const basePath = import.meta.env.BASE_URL;
+        this.weaponView.load(`${basePath}${mp}`);
       }
     }
   };
@@ -132,7 +133,8 @@ export class DevLevel extends BaseScene {
     this.weaponView = new WeaponView(this.camera);
     const initialOpts = this.weaponManager.getCurrentWeapon().getOptions();
     if (initialOpts.modelPath) {
-      this.weaponView.load(initialOpts.modelPath);
+      const basePath = import.meta.env.BASE_URL;
+      this.weaponView.load(`${basePath}${initialOpts.modelPath}`);
     }
 
     // Spawn placeholder enemies

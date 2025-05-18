@@ -1,11 +1,7 @@
 // src/core/Weapon.ts
 import * as THREE from 'three';
 
-// Static imports of weapon GLB models (with embedded textures)
-import pistolModelUrl from '../assets/weapons/pistol_001.glb?url';
-import rifleModelUrl from '../assets/weapons/rifle_001.glb?url';
-import shotgunModelUrl from '../assets/weapons/shotgun_001.glb?url';
-import sniperModelUrl from '../assets/weapons/sniper_rifle_001.glb?url';
+// Weapon models are placed in public/weapons; paths below reference that folder.
 
 import { ProjectileManager } from './ProjectileManager';
 
@@ -84,7 +80,7 @@ export class AssaultRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Assault Rifle',
-      modelPath: rifleModelUrl,
+      modelPath: 'weapons/rifle_001.glb',
       fireRate: 10, // 600 RPM
       projectileSpeed: 60,
       projectileRadius: 0.02,
@@ -154,7 +150,7 @@ export class Pistol extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Pistol',
-      modelPath: pistolModelUrl,
+      modelPath: 'weapons/pistol_001.glb',
       fireRate: 5, // 300 RPM
       projectileSpeed: 70,
       projectileRadius: 0.015,
@@ -177,7 +173,7 @@ export class Shotgun extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Shotgun',
-      modelPath: shotgunModelUrl,
+      modelPath: 'weapons/shotgun_001.glb',
       fireRate: 1, // 60 RPM
       projectileSpeed: 40,
       projectileRadius: 0.01,
@@ -210,13 +206,13 @@ export class SniperRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Sniper Rifle',
+      modelPath: 'weapons/sniper_rifle_001.glb',
       fireRate: 1, // 60 RPM
       projectileSpeed: 200,
       projectileRadius: 0.02,
       projectileLength: 0.2,
       damage: 100,
       recoil: 0.05,
-      modelPath: sniperModelUrl,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
