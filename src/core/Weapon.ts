@@ -2,12 +2,17 @@
 import * as THREE from 'three';
 
 import { ProjectileManager } from './ProjectileManager';
+// URL for the sniper rifle GLB asset
+const sniperModelUrl = new URL('../assets/weapons/sm_weapon_sniper.glb', import.meta.url).href;
 
 /**
  * Weapon parameter definitions
  */
 export interface WeaponOptions {
+  /** Display name */
   name: string;
+  /** Path to the 3D model for first-person view */
+  modelPath?: string;
   // shots per second (fire rate)
   fireRate: number;
   // projectile speed
@@ -204,6 +209,7 @@ export class SniperRifle extends Weapon {
       projectileLength: 0.2,
       damage: 100,
       recoil: 0.05,
+      modelPath: sniperModelUrl,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

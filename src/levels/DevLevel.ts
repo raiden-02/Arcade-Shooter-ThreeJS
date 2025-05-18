@@ -8,6 +8,7 @@ import { InputAction } from '../core/InputManager';
 import { ProjectileManager } from '../core/ProjectileManager';
 import { BaseScene } from '../core/Scene';
 import { WeaponManager } from '../core/WeaponManager';
+import { WeaponView } from '../core/WeaponView';
 import { EnemyManager } from '../enemy/EnemyManager';
 import { Player } from '../player/Player';
 
@@ -19,6 +20,7 @@ export class DevLevel extends BaseScene {
   private enemyManager!: EnemyManager;
   private projectileManager!: ProjectileManager;
   private weaponManager!: WeaponManager;
+  private weaponView!: WeaponView;
   private wasFiring: boolean = false;
   /**
    * Handle weapon switching via number keys or Q.
@@ -36,6 +38,10 @@ export class DevLevel extends BaseScene {
     if (switched) {
       const curr = this.weaponManager.getCurrentWeapon();
       this.ui.updateWeaponInfo(curr.getName(), curr.getOptions());
+      const mp = curr.getOptions().modelPath;
+      if (mp) {
+        this.weaponView.load(mp);
+      }
     }
   };
 
@@ -121,6 +127,12 @@ export class DevLevel extends BaseScene {
     // Provide player reference for projectile collision handling
     this.projectileManager.setPlayer(this.player);
     this.weaponManager = new WeaponManager(this.projectileManager);
+    // Initialize first-person weapon view
+    this.weaponView = new WeaponView(this.camera);
+    const initialOpts = this.weaponManager.getCurrentWeapon().getOptions();
+    if (initialOpts.modelPath) {
+      this.weaponView.load(initialOpts.modelPath);
+    }
 
     // Spawn placeholder enemies
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
@@ -161,6 +173,7 @@ export class DevLevel extends BaseScene {
     this.enemyManager.update(delta, this.engine.getTime());
     // Update player health in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+    this.weaponView.update(delta);
   }
 
   /**
@@ -168,6 +181,7 @@ export class DevLevel extends BaseScene {
    */
   public dispose(): void {
     // TODO: dispose meshes, materials, colliders as needed
+    this.weaponView.dispose();
     this.scene.clear();
     window.removeEventListener('keydown', this.onKeyDown);
   }
