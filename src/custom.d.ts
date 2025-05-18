@@ -43,3 +43,9 @@ declare module 'three/examples/jsm/loaders/GLTFLoader' {
     loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<GLTF>;
   }
 }
+
+// Allow importing .glb files as URLs
+declare module '*.glb' {
+  const url: string;
+  export default url;
+}
