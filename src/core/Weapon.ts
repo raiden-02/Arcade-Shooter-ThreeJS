@@ -2,8 +2,11 @@
 import * as THREE from 'three';
 
 import { ProjectileManager } from './ProjectileManager';
-// URL for the sniper rifle GLB asset
-const sniperModelUrl = new URL('../assets/weapons/sm_weapon_sniper.glb', import.meta.url).href;
+// URLs for weapon GLB assets
+const sniperModelUrl = new URL('../assets/weapons/sniper_rifle_001.glb', import.meta.url).href;
+const pistolModelUrl = new URL('../assets/weapons/pistol_001.glb', import.meta.url).href;
+const rifleModelUrl = new URL('../assets/weapons/rifle_001.glb', import.meta.url).href;
+const shotgunModelUrl = new URL('../assets/weapons/shotgun_001.glb', import.meta.url).href;
 
 /**
  * Weapon parameter definitions
@@ -80,6 +83,7 @@ export class AssaultRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Assault Rifle',
+      modelPath: rifleModelUrl,
       fireRate: 10, // 600 RPM
       projectileSpeed: 60,
       projectileRadius: 0.02,
@@ -149,6 +153,7 @@ export class Pistol extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Pistol',
+      modelPath: pistolModelUrl,
       fireRate: 5, // 300 RPM
       projectileSpeed: 70,
       projectileRadius: 0.015,
@@ -171,6 +176,7 @@ export class Shotgun extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Shotgun',
+      modelPath: shotgunModelUrl,
       fireRate: 1, // 60 RPM
       projectileSpeed: 40,
       projectileRadius: 0.01,

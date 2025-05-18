@@ -18,8 +18,8 @@ export class WeaponView {
    */
   constructor(camera: THREE.Object3D, offset?: THREE.Vector3, rotationOffset?: THREE.Euler) {
     this.camera = camera;
-    this.offset = offset ?? new THREE.Vector3(0.3, -0.25, -0.5);
-    this.rotationOffset = rotationOffset ?? new THREE.Euler(0, -Math.PI / 2, 0);
+    this.offset = offset ?? new THREE.Vector3(0.3, -0.35, -0.5);
+    this.rotationOffset = rotationOffset ?? new THREE.Euler(0, Math.PI / 2, 0);
   }
 
   /** Load and attach the weapon model */
