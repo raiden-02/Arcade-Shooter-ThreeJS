@@ -32,6 +32,10 @@ export interface WeaponOptions {
   automatic?: boolean;
   // radius for area-of-effect damage (e.g., grenades, rockets)
   explosionRadius?: number;
+  /** Optional camera-relative position offset for first-person view */
+  viewOffset?: THREE.Vector3;
+  /** Optional camera-relative rotation offset for first-person view */
+  viewRotationOffset?: THREE.Euler;
 }
 /**
  * Base Weapon class. Handles rate-limiting and delegates firing logic.
@@ -229,6 +233,9 @@ export class MarksmanRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Marksman Rifle',
+      modelPath: 'weapons/uploads_files_82910_Laser_Carbine_Low.obj',
+      viewRotationOffset: new THREE.Euler(0, 0, 0),
+      viewOffset: new THREE.Vector3(0.85, -0.75, -4.5),
       fireRate: 2, // 120 RPM
       projectileSpeed: 150,
       projectileRadius: 0.02,
