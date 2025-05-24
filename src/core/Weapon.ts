@@ -13,6 +13,12 @@ export interface WeaponOptions {
   name: string;
   /** Path to the 3D model for first-person view */
   modelPath?: string;
+  /** Optional position offset for first-person model (relative to camera) */
+  viewOffset?: THREE.Vector3;
+  /** Optional rotation offset for first-person model (relative to camera) */
+  viewRotationOffset?: THREE.Euler;
+  /** Optional scale for first-person model */
+  viewScale?: THREE.Vector3;
   // shots per second (fire rate)
   fireRate: number;
   // projectile speed
@@ -32,10 +38,6 @@ export interface WeaponOptions {
   automatic?: boolean;
   // radius for area-of-effect damage (e.g., grenades, rockets)
   explosionRadius?: number;
-  /** Optional camera-relative position offset for first-person view */
-  viewOffset?: THREE.Vector3;
-  /** Optional camera-relative rotation offset for first-person view */
-  viewRotationOffset?: THREE.Euler;
 }
 /**
  * Base Weapon class. Handles rate-limiting and delegates firing logic.
@@ -235,13 +237,14 @@ export class MarksmanRifle extends Weapon {
       name: 'Marksman Rifle',
       modelPath: 'weapons/uploads_files_82910_Laser_Carbine_Low.obj',
       viewRotationOffset: new THREE.Euler(0, 0, 0),
-      viewOffset: new THREE.Vector3(0.85, -0.75, -4.5),
+      viewOffset: new THREE.Vector3(0.95, -0.75, -4.5),
       fireRate: 2, // 120 RPM
       projectileSpeed: 150,
       projectileRadius: 0.02,
       projectileLength: 0.15,
       damage: 60,
       recoil: 0.03,
+      viewScale: new THREE.Vector3(0.95, 0.95, 0.95),
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

@@ -8,6 +8,7 @@ export class WeaponView {
   private camera: THREE.Object3D;
   private model?: THREE.Object3D;
   private mixer?: THREE.AnimationMixer;
+  private scale: THREE.Vector3;
   private readonly offset: THREE.Vector3;
   private readonly rotationOffset: THREE.Euler;
 
@@ -16,10 +17,22 @@ export class WeaponView {
    * @param offset Position offset from the camera
    * @param rotationOffset Rotation offset from the camera
    */
-  constructor(camera: THREE.Object3D, offset?: THREE.Vector3, rotationOffset?: THREE.Euler) {
+  /**
+   * @param camera Parent object (typically the player camera)
+   * @param offset Position offset from the camera
+   * @param rotationOffset Rotation offset from the camera
+   * @param scale Scale of the model
+   */
+  constructor(
+    camera: THREE.Object3D,
+    offset?: THREE.Vector3,
+    rotationOffset?: THREE.Euler,
+    scale?: THREE.Vector3,
+  ) {
     this.camera = camera;
     this.offset = offset ?? new THREE.Vector3(0.3, -0.35, -0.5);
     this.rotationOffset = rotationOffset ?? new THREE.Euler(0, Math.PI / 2, 0);
+    this.scale = scale ?? new THREE.Vector3(1, 1, 1);
   }
 
   /**
@@ -40,9 +53,23 @@ export class WeaponView {
       this.mixer = undefined;
     }
     this.model = obj;
+    // apply custom scale, position, and rotation
+    this.model.scale.copy(this.scale);
     this.model.position.copy(this.offset);
     this.model.rotation.copy(this.rotationOffset);
     this.camera.add(this.model);
+    // Ensure weapon model always renders on top and isn't clipped by world geometry
+    // by disabling depth test/write and bumping render order
+    this.model.traverse(child => {
+      if (child instanceof THREE.Mesh) {
+        child.renderOrder = 999;
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach(mat => {
+          mat.depthTest = false;
+          mat.depthWrite = false;
+        });
+      }
+    });
   }
 
   /** Update the animation mixer */
