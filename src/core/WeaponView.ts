@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+// Removed unused GLTF type import; loadGLTF is typed in AssetLoader
 
-import { loadGLTF } from './AssetLoader';
+import { loadGLTF, loadModel } from './AssetLoader';
 
 /** Renders a weapon model in first-person attached to the camera */
 export class WeaponView {
@@ -22,21 +22,27 @@ export class WeaponView {
     this.rotationOffset = rotationOffset ?? new THREE.Euler(0, Math.PI / 2, 0);
   }
 
-  /** Load and attach the weapon model */
+  /**
+   * Load and attach the weapon model, choosing loader by file extension.
+   */
   async load(path: string) {
     if (this.model) {
       this.camera.remove(this.model);
     }
-    const gltf: GLTF = await loadGLTF(path);
-    this.model = gltf.scene.clone(true);
+    const ext = path.split('.').pop()?.toLowerCase();
+    let obj: THREE.Object3D;
+    if (ext === 'gltf' || ext === 'glb') {
+      const gltf = await loadGLTF(path);
+      obj = gltf.scene.clone(true);
+      this.mixer = gltf.animations?.length ? new THREE.AnimationMixer(obj) : undefined;
+    } else {
+      obj = await loadModel(path);
+      this.mixer = undefined;
+    }
+    this.model = obj;
     this.model.position.copy(this.offset);
     this.model.rotation.copy(this.rotationOffset);
     this.camera.add(this.model);
-    if (gltf.animations?.length) {
-      this.mixer = new THREE.AnimationMixer(this.model);
-    } else {
-      this.mixer = undefined;
-    }
   }
 
   /** Update the animation mixer */

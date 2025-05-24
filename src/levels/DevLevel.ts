@@ -37,12 +37,14 @@ export class DevLevel extends BaseScene {
     }
     if (switched) {
       const curr = this.weaponManager.getCurrentWeapon();
-      this.ui.updateWeaponInfo(curr.getName(), curr.getOptions());
+      const opts = curr.getOptions();
+      this.ui.updateWeaponInfo(curr.getName(), opts);
       this.weaponView.dispose();
-      const mp = curr.getOptions().modelPath;
-      if (mp) {
-        const basePath = import.meta.env.BASE_URL;
-        this.weaponView.load(`${basePath}${mp}`);
+      const basePath = import.meta.env.BASE_URL;
+      // create a new view with this weapon's custom offsets
+      this.weaponView = new WeaponView(this.camera, opts.viewOffset, opts.viewRotationOffset);
+      if (opts.modelPath) {
+        this.weaponView.load(`${basePath}${opts.modelPath}`);
       }
     }
   };
@@ -129,11 +131,16 @@ export class DevLevel extends BaseScene {
     // Provide player reference for projectile collision handling
     this.projectileManager.setPlayer(this.player);
     this.weaponManager = new WeaponManager(this.projectileManager);
-    // Initialize first-person weapon view
-    this.weaponView = new WeaponView(this.camera);
-    const initialOpts = this.weaponManager.getCurrentWeapon().getOptions();
+    // Initialize first-person weapon view with per-weapon offsets
+    const initialWeapon = this.weaponManager.getCurrentWeapon();
+    const initialOpts = initialWeapon.getOptions();
+    const basePath = import.meta.env.BASE_URL;
+    this.weaponView = new WeaponView(
+      this.camera,
+      initialOpts.viewOffset,
+      initialOpts.viewRotationOffset,
+    );
     if (initialOpts.modelPath) {
-      const basePath = import.meta.env.BASE_URL;
       this.weaponView.load(`${basePath}${initialOpts.modelPath}`);
     }
 

@@ -44,6 +44,36 @@ declare module 'three/examples/jsm/loaders/GLTFLoader' {
   }
 }
 
+// OBJLoader from three.js examples
+declare module 'three/examples/jsm/loaders/OBJLoader' {
+  import { LoadingManager, Group } from 'three';
+  export class OBJLoader {
+    constructor(manager?: LoadingManager);
+    load(
+      url: string,
+      onLoad: (object: Group) => void,
+      onProgress?: (event: ProgressEvent) => void,
+      onError?: (event: ErrorEvent) => void,
+    ): void;
+    loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<Group>;
+  }
+}
+
+// FBXLoader from three.js examples
+declare module 'three/examples/jsm/loaders/FBXLoader' {
+  import { LoadingManager, Group } from 'three';
+  export class FBXLoader {
+    constructor(manager?: LoadingManager);
+    load(
+      url: string,
+      onLoad: (object: Group) => void,
+      onProgress?: (event: ProgressEvent) => void,
+      onError?: (event: ErrorEvent) => void,
+    ): void;
+    loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<Group>;
+  }
+}
+
 // Allow importing .glb files as URLs
 declare module '*.glb' {
   const url: string;
