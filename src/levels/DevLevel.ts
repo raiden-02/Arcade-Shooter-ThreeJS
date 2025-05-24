@@ -41,8 +41,13 @@ export class DevLevel extends BaseScene {
       this.ui.updateWeaponInfo(curr.getName(), opts);
       this.weaponView.dispose();
       const basePath = import.meta.env.BASE_URL;
-      // create a new view with this weapon's custom offsets
-      this.weaponView = new WeaponView(this.camera, opts.viewOffset, opts.viewRotationOffset);
+      // create a new view with this weapon's custom offsets, rotation, and scale
+      this.weaponView = new WeaponView(
+        this.camera,
+        opts.viewOffset,
+        opts.viewRotationOffset,
+        opts.viewScale,
+      );
       if (opts.modelPath) {
         this.weaponView.load(`${basePath}${opts.modelPath}`);
       }
@@ -139,6 +144,7 @@ export class DevLevel extends BaseScene {
       this.camera,
       initialOpts.viewOffset,
       initialOpts.viewRotationOffset,
+      initialOpts.viewScale,
     );
     if (initialOpts.modelPath) {
       this.weaponView.load(`${basePath}${initialOpts.modelPath}`);
