@@ -9,8 +9,15 @@ export class WeaponView {
   private model?: THREE.Object3D;
   private mixer?: THREE.AnimationMixer;
   private scale: THREE.Vector3;
-  private readonly offset: THREE.Vector3;
-  private readonly rotationOffset: THREE.Euler;
+  // Hip-fire offsets
+  private defaultOffset: THREE.Vector3;
+  private defaultRotation: THREE.Euler;
+  // ADS (aim-down-sights) configuration
+  private adsOffset: THREE.Vector3;
+  private adsRotationOffset: THREE.Euler;
+  private adsTransitionTime: number;
+  private adsProgress: number = 0;
+  private isADS: boolean = false;
 
   /**
    * @param camera Parent object (typically the player camera) to attach the model to
@@ -30,9 +37,15 @@ export class WeaponView {
     scale?: THREE.Vector3,
   ) {
     this.camera = camera;
-    this.offset = offset ?? new THREE.Vector3(0.3, -0.35, -0.5);
-    this.rotationOffset = rotationOffset ?? new THREE.Euler(0, Math.PI / 2, 0);
-    this.scale = scale ?? new THREE.Vector3(1, 1, 1);
+    this.defaultOffset = offset?.clone() ?? new THREE.Vector3(0.3, -0.35, -0.5);
+    this.defaultRotation = rotationOffset?.clone() ?? new THREE.Euler(0, Math.PI / 2, 0);
+    this.scale = scale?.clone() ?? new THREE.Vector3(1, 1, 1);
+    // Initialize ADS to hip-fire by default
+    this.adsOffset = this.defaultOffset.clone();
+    this.adsRotationOffset = this.defaultRotation.clone();
+    this.adsTransitionTime = 0.2;
+    this.adsProgress = 0;
+    this.isADS = false;
   }
 
   /**
@@ -53,10 +66,11 @@ export class WeaponView {
       this.mixer = undefined;
     }
     this.model = obj;
-    // apply custom scale, position, and rotation
+    // apply custom scale
     this.model.scale.copy(this.scale);
-    this.model.position.copy(this.offset);
-    this.model.rotation.copy(this.rotationOffset);
+    // initial position & rotation (hip-fire)
+    this.model.position.copy(this.defaultOffset);
+    this.model.rotation.copy(this.defaultRotation);
     this.camera.add(this.model);
     // Ensure weapon model always renders on top and isn't clipped by world geometry
     // by disabling depth test/write and bumping render order
@@ -72,9 +86,38 @@ export class WeaponView {
     });
   }
 
-  /** Update the animation mixer */
+  /** Update the animation mixer and handle ADS transition */
   update(delta: number) {
     this.mixer?.update(delta);
+    if (!this.model) return;
+    if (this.adsTransitionTime > 0) {
+      const step = delta / this.adsTransitionTime;
+      this.adsProgress = THREE.MathUtils.clamp(
+        this.adsProgress + (this.isADS ? step : -step),
+        0,
+        1,
+      );
+    }
+    // interpolate position between hip-fire and ADS offsets
+    const targetOffset = this.defaultOffset.clone().lerp(this.adsOffset, this.adsProgress);
+    this.model.position.copy(targetOffset);
+    // interpolate rotation (Euler) linearly
+    const rx = THREE.MathUtils.lerp(
+      this.defaultRotation.x,
+      this.adsRotationOffset.x,
+      this.adsProgress,
+    );
+    const ry = THREE.MathUtils.lerp(
+      this.defaultRotation.y,
+      this.adsRotationOffset.y,
+      this.adsProgress,
+    );
+    const rz = THREE.MathUtils.lerp(
+      this.defaultRotation.z,
+      this.adsRotationOffset.z,
+      this.adsProgress,
+    );
+    this.model.rotation.set(rx, ry, rz);
   }
 
   /** Remove the model from the camera */
@@ -84,5 +127,25 @@ export class WeaponView {
       this.model = undefined;
     }
     this.mixer = undefined;
+  }
+  /**
+   * Configure ADS offsets and transition time (seconds)
+   */
+  public configureADS(
+    adsOffset: THREE.Vector3,
+    adsRotationOffset: THREE.Euler,
+    transitionTime: number,
+  ): void {
+    this.adsOffset = adsOffset.clone();
+    this.adsRotationOffset = adsRotationOffset.clone();
+    this.adsTransitionTime = transitionTime;
+    this.adsProgress = 0;
+  }
+  /**
+   * Enable or disable aim-down-sights
+   */
+  public setADS(active: boolean): void {
+    console.log(`ADS ${active ? 'enabled' : 'disabled'}`);
+    this.isADS = active;
   }
 }

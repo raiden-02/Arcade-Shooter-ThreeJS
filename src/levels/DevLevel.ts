@@ -51,6 +51,13 @@ export class DevLevel extends BaseScene {
       if (opts.modelPath) {
         this.weaponView.load(`${basePath}${opts.modelPath}`);
       }
+      // Configure ADS offsets for the new weapon
+      const defaultOffset2 = opts.viewOffset?.clone() ?? new THREE.Vector3(0.3, -0.35, -0.5);
+      const defaultRot2 = opts.viewRotationOffset?.clone() ?? new THREE.Euler(0, Math.PI / 2, 0);
+      const adsOffset2 = opts.adsOffset?.clone() ?? defaultOffset2.clone();
+      const adsRot2 = opts.adsRotationOffset?.clone() ?? defaultRot2.clone();
+      const adsTime2 = opts.adsTransitionTime ?? 0.15;
+      this.weaponView.configureADS(adsOffset2, adsRot2, adsTime2);
     }
   };
 
@@ -149,6 +156,14 @@ export class DevLevel extends BaseScene {
     if (initialOpts.modelPath) {
       this.weaponView.load(`${basePath}${initialOpts.modelPath}`);
     }
+    // Configure ADS offsets for this weapon
+    const defaultOffset = initialOpts.viewOffset?.clone() ?? new THREE.Vector3(0.3, -0.35, -0.5);
+    const defaultRot =
+      initialOpts.viewRotationOffset?.clone() ?? new THREE.Euler(0, Math.PI / 2, 0);
+    const adsOffset = initialOpts.adsOffset?.clone() ?? defaultOffset.clone();
+    const adsRot = initialOpts.adsRotationOffset?.clone() ?? defaultRot.clone();
+    const adsTime = initialOpts.adsTransitionTime ?? 0.15;
+    this.weaponView.configureADS(adsOffset, adsRot, adsTime);
 
     // Spawn placeholder enemies
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
@@ -189,6 +204,9 @@ export class DevLevel extends BaseScene {
     this.enemyManager.update(delta, this.engine.getTime());
     // Update player health in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+    // Aim-down-sights toggle
+    const aiming = this.input.isPressed(InputAction.Aim);
+    this.weaponView.setADS(aiming);
     this.weaponView.update(delta);
   }
 
