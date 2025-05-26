@@ -189,7 +189,9 @@ export class Shotgun extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Shotgun',
-      modelPath: 'weapons/shotgun_001.glb',
+      modelPath: 'weapons/glTF/AR_4.gltf',
+      viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.7),
       fireRate: 1, // 60 RPM
       projectileSpeed: 40,
       projectileRadius: 0.01,
@@ -222,7 +224,9 @@ export class SniperRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Sniper Rifle',
-      modelPath: 'weapons/sniper_rifle_001.glb',
+      modelPath: 'weapons/glTF/Sniper_2.gltf',
+      viewScale: new THREE.Vector3(1.4, 1.4, 1.4),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.6),
       fireRate: 1, // 60 RPM
       projectileSpeed: 200,
       projectileRadius: 0.02,
