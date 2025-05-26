@@ -2,11 +2,11 @@ import { LoadingManager, Group, Object3D } from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 
 const manager = new LoadingManager();
 const gltfLoader = new GLTFLoader(manager);
-const objLoader = new OBJLoader(manager);
 const fbxLoader = new FBXLoader(manager);
 const cache = new Map<string, Promise<unknown>>();
 /**
@@ -28,7 +28,19 @@ export function loadGLTF(path: string): Promise<GLTF> {
  */
 export function loadOBJ(path: string): Promise<Group> {
   if (!cache.has(path)) {
-    const promise = objLoader.loadAsync(path);
+    const promise = (async () => {
+      const mtlLoader = new MTLLoader(manager);
+      const loader = new OBJLoader(manager);
+      const mtlPath = path.replace(/\.obj$/i, '.mtl');
+      try {
+        const materials = await mtlLoader.loadAsync(mtlPath);
+        materials.preload();
+        loader.setMaterials(materials);
+      } catch {
+        console.warn(`MTL not found for ${path}, loading OBJ without materials.`);
+      }
+      return loader.loadAsync(path);
+    })();
     cache.set(path, promise);
   }
   return cache.get(path) as Promise<Group>;
