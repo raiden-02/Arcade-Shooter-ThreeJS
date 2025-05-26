@@ -86,7 +86,9 @@ export class AssaultRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Assault Rifle',
-      modelPath: 'weapons/rifle_001.glb',
+      modelPath: 'weapons/glTF/AR_2.gltf',
+      viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.7),
       fireRate: 10, // 600 RPM
       projectileSpeed: 60,
       projectileRadius: 0.02,
@@ -110,6 +112,9 @@ export class SubMachineGun extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'SMG',
+      modelPath: 'weapons/glTF/AR_1.gltf',
+      viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.65),
       fireRate: 12, // 720 RPM
       projectileSpeed: 50,
       projectileRadius: 0.02,
@@ -133,6 +138,9 @@ export class LightMachineGun extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'LMG',
+      modelPath: 'weapons/glTF/AR_5.gltf',
+      viewScale: new THREE.Vector3(1.2, 1.2, 1.2),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.95),
       fireRate: 8, // 480 RPM
       projectileSpeed: 65,
       projectileRadius: 0.025,
@@ -156,7 +164,9 @@ export class Pistol extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Pistol',
-      modelPath: 'weapons/pistol_001.glb',
+      modelPath: 'weapons/glTF/Pistol_1.gltf',
+      viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.4),
       fireRate: 5, // 300 RPM
       projectileSpeed: 70,
       projectileRadius: 0.015,
@@ -235,16 +245,15 @@ export class MarksmanRifle extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Marksman Rifle',
-      modelPath: 'weapons/uploads_files_82910_Laser_Carbine_Low.obj',
-      viewRotationOffset: new THREE.Euler(0, 0, 0),
-      viewOffset: new THREE.Vector3(0.95, -0.75, -4.5),
+      modelPath: 'weapons/glTF/Sniper_1.gltf',
+      viewScale: new THREE.Vector3(1.2, 1.2, 1.2),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.6),
       fireRate: 2, // 120 RPM
       projectileSpeed: 150,
       projectileRadius: 0.02,
       projectileLength: 0.15,
       damage: 60,
       recoil: 0.03,
-      viewScale: new THREE.Vector3(0.95, 0.95, 0.95),
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -261,6 +270,9 @@ export class GrenadeLauncher extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Grenade Launcher',
+      modelPath: 'weapons/glTF/Grenade_3.gltf',
+      viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.5),
       fireRate: 0.5, // 30 RPM
       projectileSpeed: 30,
       projectileRadius: 0.1,
@@ -286,6 +298,9 @@ export class RocketLauncher extends Weapon {
   constructor(pm: ProjectileManager) {
     super(pm, {
       name: 'Rocket Launcher',
+      modelPath: 'weapons/glTF/Grenade_2.gltf',
+      viewScale: new THREE.Vector3(1.4, 1.4, 1.4),
+      viewOffset: new THREE.Vector3(0.7, -0.7, -1.4),
       fireRate: 0.5, // 30 RPM
       projectileSpeed: 25,
       projectileRadius: 0.12,
