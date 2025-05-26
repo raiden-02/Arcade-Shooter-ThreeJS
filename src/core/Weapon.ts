@@ -19,6 +19,12 @@ export interface WeaponOptions {
   viewRotationOffset?: THREE.Euler;
   /** Optional scale for first-person model */
   viewScale?: THREE.Vector3;
+  /** ADS (aim-down-sights) position offset relative to camera */
+  adsOffset?: THREE.Vector3;
+  /** ADS (aim-down-sights) rotation offset relative to camera */
+  adsRotationOffset?: THREE.Euler;
+  /** Time in seconds to transition between hip-fire and ADS */
+  adsTransitionTime?: number;
   // shots per second (fire rate)
   fireRate: number;
   // projectile speed
@@ -96,6 +102,9 @@ export class AssaultRifle extends Weapon {
       damage: 20,
       recoil: 0.01,
       automatic: true,
+      adsOffset: new THREE.Vector3(0.0, -0.5, -1.2),
+      // adsRotationOffset: new THREE.Euler(0, 0, 0),
+      adsTransitionTime: 0.15,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
