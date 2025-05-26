@@ -145,7 +145,12 @@ export class WeaponView {
    * Enable or disable aim-down-sights
    */
   public setADS(active: boolean): void {
-    console.log(`ADS ${active ? 'enabled' : 'disabled'}`);
     this.isADS = active;
+  }
+  /**
+   * Returns current ADS interpolation progress (0 = hip-fire, 1 = ADS)
+   */
+  public getADSProgress(): number {
+    return this.adsProgress;
   }
 }

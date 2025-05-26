@@ -22,6 +22,8 @@ export class DevLevel extends BaseScene {
   private weaponManager!: WeaponManager;
   private weaponView!: WeaponView;
   private wasFiring: boolean = false;
+  private defaultFov!: number;
+  private adsFov!: number;
   /**
    * Handle weapon switching via number keys or Q.
    */
@@ -58,6 +60,8 @@ export class DevLevel extends BaseScene {
       const adsRot2 = opts.adsRotationOffset?.clone() ?? defaultRot2.clone();
       const adsTime2 = opts.adsTransitionTime ?? 0.15;
       this.weaponView.configureADS(adsOffset2, adsRot2, adsTime2);
+      // Update ADS FOV for the new weapon
+      this.adsFov = opts.adsFov ?? this.defaultFov * 0.75;
     }
   };
 
@@ -164,6 +168,9 @@ export class DevLevel extends BaseScene {
     const adsRot = initialOpts.adsRotationOffset?.clone() ?? defaultRot.clone();
     const adsTime = initialOpts.adsTransitionTime ?? 0.15;
     this.weaponView.configureADS(adsOffset, adsRot, adsTime);
+    // Store camera FOV settings for ADS zoom
+    this.defaultFov = this.camera.fov;
+    this.adsFov = initialOpts.adsFov ?? this.defaultFov * 0.75;
 
     // Spawn placeholder enemies
     this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
@@ -207,6 +214,10 @@ export class DevLevel extends BaseScene {
     // Aim-down-sights toggle
     const aiming = this.input.isPressed(InputAction.Aim);
     this.weaponView.setADS(aiming);
+    // Smoothly interpolate camera FOV for ADS zoom
+    const progress = this.weaponView.getADSProgress();
+    this.camera.fov = THREE.MathUtils.lerp(this.defaultFov, this.adsFov, progress);
+    this.camera.updateProjectionMatrix();
     this.weaponView.update(delta);
   }
 
