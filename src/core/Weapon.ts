@@ -25,6 +25,8 @@ export interface WeaponOptions {
   adsRotationOffset?: THREE.Euler;
   /** Time in seconds to transition between hip-fire and ADS */
   adsTransitionTime?: number;
+  /** Field of view (degrees) to use when aiming down sights */
+  adsFov?: number;
   // shots per second (fire rate)
   fireRate: number;
   // projectile speed
