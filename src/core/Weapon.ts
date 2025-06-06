@@ -180,6 +180,7 @@ export class SubMachineGun extends Weapon {
       damage: 12,
       recoil: 0.008,
       automatic: true,
+      adsTransitionTime: 0.1,
       magazineSize: 25,
       reloadTime: 2,
     });
@@ -209,6 +210,7 @@ export class LightMachineGun extends Weapon {
       damage: 25,
       recoil: 0.012,
       automatic: true,
+      adsTransitionTime: 0.2,
       magazineSize: 100,
       reloadTime: 5,
     });
@@ -237,6 +239,7 @@ export class Pistol extends Weapon {
       projectileLength: 0.08,
       damage: 15,
       recoil: 0.005,
+      adsTransitionTime: 0.1,
       magazineSize: 12,
       reloadTime: 1.5,
     });
@@ -267,6 +270,7 @@ export class Shotgun extends Weapon {
       pelletCount: 8,
       pelletSpreadDeg: 10,
       recoil: 0.02,
+      adsTransitionTime: 0.2,
       magazineSize: 8,
       reloadTime: 3,
     });
@@ -303,6 +307,7 @@ export class SniperRifle extends Weapon {
       projectileLength: 0.2,
       damage: 100,
       recoil: 0.05,
+      adsTransitionTime: 0.3,
       magazineSize: 5,
       reloadTime: 3.5,
     });
@@ -331,6 +336,7 @@ export class MarksmanRifle extends Weapon {
       projectileLength: 0.15,
       damage: 60,
       recoil: 0.03,
+      adsTransitionTime: 0.25,
       magazineSize: 10,
       reloadTime: 2.5,
     });
@@ -361,6 +367,7 @@ export class GrenadeLauncher extends Weapon {
       recoil: 0.02,
       // explosion radius in world units (meters); tuned for tighter blast
       explosionRadius: 2,
+      adsTransitionTime: 0.3,
       magazineSize: 6,
       reloadTime: 4,
     });
@@ -392,6 +399,7 @@ export class RocketLauncher extends Weapon {
       recoil: 0.025,
       // explosion radius in world units (meters); tuned for controlled blast
       explosionRadius: 3,
+      adsTransitionTime: 0.3,
       magazineSize: 4,
       reloadTime: 4,
     });
