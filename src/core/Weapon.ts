@@ -46,16 +46,31 @@ export interface WeaponOptions {
   automatic?: boolean;
   // radius for area-of-effect damage (e.g., grenades, rockets)
   explosionRadius?: number;
+  /** Magazine capacity (# bullets per reload) */
+  magazineSize: number;
+  /** Reload duration in seconds */
+  reloadTime: number;
+  /** Optional animation clip name for firing */
+  fireAnimClip?: string;
+  /** Optional animation clip name for reloading */
+  reloadAnimClip?: string;
 }
 /**
  * Base Weapon class. Handles rate-limiting and delegates firing logic.
  */
 export abstract class Weapon {
   protected lastShotTime: number = 0;
+  /** Current ammo in magazine */
+  protected currentAmmo: number;
+  /** Reload state flag */
+  protected reloading: boolean = false;
   constructor(
     protected projectileManager: ProjectileManager,
     protected options: WeaponOptions,
-  ) {}
+  ) {
+    this.currentAmmo = options.magazineSize;
+    this.reloading = false;
+  }
 
   /**
    * Attempt to fire the weapon. Must be called with current time in seconds.
@@ -76,10 +91,13 @@ export abstract class Weapon {
    * Attempt to fire the weapon at given time. Returns true if a shot was fired.
    */
   public tryFire(origin: THREE.Vector3, direction: THREE.Vector3, time: number): boolean {
+    if (this.reloading) return false;
+    if (this.currentAmmo <= 0) return false;
     const interval = 1 / this.options.fireRate;
     if (time - this.lastShotTime < interval) return false;
     this.lastShotTime = time;
     this.fire(origin, direction);
+    this.currentAmmo--;
     return true;
   }
 
@@ -87,6 +105,33 @@ export abstract class Weapon {
    * Actual firing logic, implemented by subclasses.
    */
   protected abstract fire(origin: THREE.Vector3, direction: THREE.Vector3): void;
+
+  /**
+   * Begin reloading the weapon. Returns a promise that resolves when reload completes.
+   */
+  public async reload(): Promise<void> {
+    if (this.reloading) return;
+    if (this.currentAmmo >= this.options.magazineSize) return;
+    this.reloading = true;
+    await new Promise<void>(resolve => setTimeout(resolve, this.options.reloadTime * 1000));
+    this.currentAmmo = this.options.magazineSize;
+    this.reloading = false;
+  }
+
+  /** Current ammo count in magazine */
+  public getCurrentAmmo(): number {
+    return this.currentAmmo;
+  }
+
+  /** Maximum ammo capacity per magazine */
+  public getMagazineSize(): number {
+    return this.options.magazineSize;
+  }
+
+  /** Whether a reload is in progress */
+  public isReloading(): boolean {
+    return this.reloading;
+  }
 }
 
 /** Assault Rifle: medium fire rate, moderate damage */
@@ -106,6 +151,8 @@ export class AssaultRifle extends Weapon {
       recoil: 0.01,
       automatic: true,
       adsTransitionTime: 0.15,
+      magazineSize: 30,
+      reloadTime: 2.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -133,6 +180,8 @@ export class SubMachineGun extends Weapon {
       damage: 12,
       recoil: 0.008,
       automatic: true,
+      magazineSize: 25,
+      reloadTime: 2,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -160,6 +209,8 @@ export class LightMachineGun extends Weapon {
       damage: 25,
       recoil: 0.012,
       automatic: true,
+      magazineSize: 100,
+      reloadTime: 5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -186,6 +237,8 @@ export class Pistol extends Weapon {
       projectileLength: 0.08,
       damage: 15,
       recoil: 0.005,
+      magazineSize: 12,
+      reloadTime: 1.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -214,6 +267,8 @@ export class Shotgun extends Weapon {
       pelletCount: 8,
       pelletSpreadDeg: 10,
       recoil: 0.02,
+      magazineSize: 8,
+      reloadTime: 3,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -248,6 +303,8 @@ export class SniperRifle extends Weapon {
       projectileLength: 0.2,
       damage: 100,
       recoil: 0.05,
+      magazineSize: 5,
+      reloadTime: 3.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -274,6 +331,8 @@ export class MarksmanRifle extends Weapon {
       projectileLength: 0.15,
       damage: 60,
       recoil: 0.03,
+      magazineSize: 10,
+      reloadTime: 2.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -302,6 +361,8 @@ export class GrenadeLauncher extends Weapon {
       recoil: 0.02,
       // explosion radius in world units (meters); tuned for tighter blast
       explosionRadius: 2,
+      magazineSize: 6,
+      reloadTime: 4,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -331,6 +392,8 @@ export class RocketLauncher extends Weapon {
       recoil: 0.025,
       // explosion radius in world units (meters); tuned for controlled blast
       explosionRadius: 3,
+      magazineSize: 4,
+      reloadTime: 4,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
