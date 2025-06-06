@@ -97,6 +97,7 @@ export class AssaultRifle extends Weapon {
       modelPath: 'weapons/glTF/AR_2.gltf',
       viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.7),
+      adsOffset: new THREE.Vector3(0.0, -0.5, -1.2),
       fireRate: 10, // 600 RPM
       projectileSpeed: 60,
       projectileRadius: 0.02,
@@ -104,8 +105,6 @@ export class AssaultRifle extends Weapon {
       damage: 20,
       recoil: 0.01,
       automatic: true,
-      adsOffset: new THREE.Vector3(0.0, -0.5, -1.2),
-      // adsRotationOffset: new THREE.Euler(0, 0, 0),
       adsTransitionTime: 0.15,
     });
   }
@@ -126,6 +125,7 @@ export class SubMachineGun extends Weapon {
       modelPath: 'weapons/glTF/AR_1.gltf',
       viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.65),
+      adsOffset: new THREE.Vector3(0.0, -0.5, -1.15),
       fireRate: 12, // 720 RPM
       projectileSpeed: 50,
       projectileRadius: 0.02,
@@ -152,6 +152,7 @@ export class LightMachineGun extends Weapon {
       modelPath: 'weapons/glTF/AR_5.gltf',
       viewScale: new THREE.Vector3(1.2, 1.2, 1.2),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.95),
+      adsOffset: new THREE.Vector3(0.0, -0.6, -1.45),
       fireRate: 8, // 480 RPM
       projectileSpeed: 65,
       projectileRadius: 0.025,
@@ -178,6 +179,7 @@ export class Pistol extends Weapon {
       modelPath: 'weapons/glTF/Pistol_1.gltf',
       viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.4),
+      adsOffset: new THREE.Vector3(0.0, -0.5, -0.9),
       fireRate: 5, // 300 RPM
       projectileSpeed: 70,
       projectileRadius: 0.015,
@@ -203,6 +205,7 @@ export class Shotgun extends Weapon {
       modelPath: 'weapons/glTF/AR_4.gltf',
       viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.7),
+      adsOffset: new THREE.Vector3(0.0, -0.5, -1.2),
       fireRate: 1, // 60 RPM
       projectileSpeed: 40,
       projectileRadius: 0.01,
@@ -238,6 +241,7 @@ export class SniperRifle extends Weapon {
       modelPath: 'weapons/glTF/Sniper_2.gltf',
       viewScale: new THREE.Vector3(1.4, 1.4, 1.4),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.6),
+      adsOffset: new THREE.Vector3(0.0, -0.7, -1.4),
       fireRate: 1, // 60 RPM
       projectileSpeed: 200,
       projectileRadius: 0.02,
@@ -263,6 +267,7 @@ export class MarksmanRifle extends Weapon {
       modelPath: 'weapons/glTF/Sniper_1.gltf',
       viewScale: new THREE.Vector3(1.2, 1.2, 1.2),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.6),
+      adsOffset: new THREE.Vector3(0.0, -0.5, -1.1),
       fireRate: 2, // 120 RPM
       projectileSpeed: 150,
       projectileRadius: 0.02,
@@ -288,6 +293,7 @@ export class GrenadeLauncher extends Weapon {
       modelPath: 'weapons/glTF/Grenade_3.gltf',
       viewScale: new THREE.Vector3(1.1, 1.1, 1.1),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.5),
+      adsOffset: new THREE.Vector3(0.0, -0.6, -1.0),
       fireRate: 0.5, // 30 RPM
       projectileSpeed: 30,
       projectileRadius: 0.1,
@@ -316,6 +322,7 @@ export class RocketLauncher extends Weapon {
       modelPath: 'weapons/glTF/Grenade_2.gltf',
       viewScale: new THREE.Vector3(1.4, 1.4, 1.4),
       viewOffset: new THREE.Vector3(0.7, -0.7, -1.4),
+      adsOffset: new THREE.Vector3(0.0, -0.8, -0.9),
       fireRate: 0.5, // 30 RPM
       projectileSpeed: 25,
       projectileRadius: 0.12,
