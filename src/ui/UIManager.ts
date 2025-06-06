@@ -9,6 +9,8 @@ export class UIManager {
   weaponInfo: HTMLDivElement;
   // Health info display
   healthInfo: HTMLDivElement;
+  /** Ammo info display (current magazine count / reload status) */
+  ammoInfo: HTMLDivElement;
 
   constructor() {
     this.pauseMenu = new PauseMenu();
@@ -47,6 +49,23 @@ export class UIManager {
       z-index: 500;
     `;
     document.body.appendChild(this.healthInfo);
+    // Ammo info display
+    this.ammoInfo = document.createElement('div');
+    this.ammoInfo.id = 'ammo-info';
+    this.ammoInfo.style.cssText = `
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 500;
+    `;
+    document.body.appendChild(this.ammoInfo);
   }
 
   showPause() {
@@ -54,6 +73,7 @@ export class UIManager {
     this.hud.hide();
     this.weaponInfo.style.display = 'none';
     this.healthInfo.style.display = 'none';
+    this.ammoInfo.style.display = 'none';
   }
 
   hidePause() {
@@ -61,6 +81,7 @@ export class UIManager {
     this.hud.show();
     this.weaponInfo.style.display = 'block';
     this.healthInfo.style.display = 'block';
+    this.ammoInfo.style.display = 'block';
   }
 
   togglePause() {
@@ -93,5 +114,13 @@ export class UIManager {
    */
   public updateHealth(current: number, max: number): void {
     this.healthInfo.innerHTML = `<strong>Health</strong><br>${current} / ${max}`;
+  }
+
+  /**
+   * Update bottom-left ammo display.
+   */
+  public updateAmmo(currentAmmo: number, magazineSize: number, reloading: boolean): void {
+    const status = reloading ? 'Reloading...' : `${currentAmmo} / ${magazineSize}`;
+    this.ammoInfo.innerHTML = `<strong>Ammo</strong><br>${status}`;
   }
 }

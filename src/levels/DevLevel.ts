@@ -37,6 +37,11 @@ export class DevLevel extends BaseScene {
       this.weaponManager.nextWeapon();
       switched = true;
     }
+    if (e.code === 'KeyR') {
+      // Trigger reload for current weapon
+      this.weaponManager.getCurrentWeapon().reload();
+      return;
+    }
     if (switched) {
       const curr = this.weaponManager.getCurrentWeapon();
       const opts = curr.getOptions();
@@ -179,8 +184,14 @@ export class DevLevel extends BaseScene {
     // Update initial UI for weapon
     const initial = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initial.getName(), initial.getOptions());
-    // Update initial UI for player health
+    // Update initial UI for player health and ammo
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+    const initWeapon = this.weaponManager.getCurrentWeapon();
+    this.ui.updateAmmo(
+      initWeapon.getCurrentAmmo(),
+      initWeapon.getMagazineSize(),
+      initWeapon.isReloading(),
+    );
     // Weapon switching input
     window.addEventListener('keydown', this.onKeyDown);
   }
@@ -209,8 +220,14 @@ export class DevLevel extends BaseScene {
     this.projectileManager.handleCollisions(this.physics.eventQueue);
     // Update enemies (movement, shooting, UI)
     this.enemyManager.update(delta, this.engine.getTime());
-    // Update player health in UI
+    // Update player health and ammo in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+    const currentWeapon = this.weaponManager.getCurrentWeapon();
+    this.ui.updateAmmo(
+      currentWeapon.getCurrentAmmo(),
+      currentWeapon.getMagazineSize(),
+      currentWeapon.isReloading(),
+    );
     // Aim-down-sights toggle
     const aiming = this.input.isPressed(InputAction.Aim);
     this.weaponView.setADS(aiming);
