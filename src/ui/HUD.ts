@@ -5,7 +5,7 @@ export class HUD {
     this.crosshair = document.createElement('div');
     this.crosshair.id = 'crosshair';
 
-    ['top', 'left', 'right', 'bottom'].forEach((side) => {
+    ['top', 'left', 'right', 'bottom'].forEach(side => {
       const line = document.createElement('span');
       line.className = `line ${side}`;
       this.crosshair.appendChild(line);

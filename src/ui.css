@@ -73,6 +73,86 @@ body {
 
 /* Optional: Add a gap by shrinking the lines and/or increasing the circle size */
 
+/* Weapon-specific crosshair styles */
+
+/* Plus crosshair: remove circle border for most weapons */
+#crosshair.weapon-pistol,
+#crosshair.weapon-assault-rifle,
+#crosshair.weapon-smg,
+#crosshair.weapon-lmg,
+#crosshair.weapon-marksman-rifle,
+#crosshair.weapon-sniper-rifle,
+#crosshair.weapon-grenade-launcher {
+  border: none;
+  box-shadow: none;
+}
+
+/* Shotgun: large circle only */
+#crosshair.weapon-shotgun {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+#crosshair.weapon-shotgun .line {
+  display: none;
+}
+
+/* Assault Rifle: tighter gap */
+#crosshair.weapon-assault-rifle .top,
+#crosshair.weapon-assault-rifle .bottom {
+  height: 6px;
+}
+#crosshair.weapon-assault-rifle .left,
+#crosshair.weapon-assault-rifle .right {
+  width: 6px;
+}
+
+/* SMG: smaller lines */
+#crosshair.weapon-smg .top,
+#crosshair.weapon-smg .bottom {
+  height: 4px;
+}
+#crosshair.weapon-smg .left,
+#crosshair.weapon-smg .right {
+  width: 4px;
+}
+
+/* LMG: larger gap */
+#crosshair.weapon-lmg .top,
+#crosshair.weapon-lmg .bottom {
+  height: 10px;
+}
+#crosshair.weapon-lmg .left,
+#crosshair.weapon-lmg .right {
+  width: 10px;
+}
+
+/* Marksman Rifle: accented lines */
+#crosshair.weapon-marksman-rifle .line {
+  background: var(--cp-accent);
+  box-shadow: 0 0 8px var(--cp-accent);
+}
+
+/* Grenade Launcher: bold lines */
+#crosshair.weapon-grenade-launcher .top,
+#crosshair.weapon-grenade-launcher .bottom {
+  height: 12px;
+}
+#crosshair.weapon-grenade-launcher .left,
+#crosshair.weapon-grenade-launcher .right {
+  width: 12px;
+}
+
+/* Rocket Launcher: large circle only */
+#crosshair.weapon-rocket-launcher {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+#crosshair.weapon-rocket-launcher .line {
+  display: none;
+}
+
 #pause-menu {
   position: fixed;
   top: 0;
