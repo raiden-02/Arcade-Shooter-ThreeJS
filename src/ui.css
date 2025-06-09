@@ -140,3 +140,20 @@ strong {
   color: var(--cp-accent);
   text-shadow: 0 0 4px var(--cp-accent);
 }
+
+/* Health bar styling */
+#health-info .health-bar-container {
+  width: 120px;
+  height: 8px;
+  background: var(--cp-bg-overlay);
+  border: 1px solid var(--cp-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+#health-info .health-bar {
+  height: 100%;
+  background: var(--cp-accent);
+  width: 100%;
+  transition: width 0.2s ease;
+}

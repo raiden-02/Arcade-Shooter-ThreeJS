@@ -71,10 +71,14 @@ export class UIManager {
     this.weaponInfo.innerHTML = html;
   }
   /**
-   * Update top-left health display.
+   * Update top-left health display as a visual health bar.
    */
   public updateHealth(current: number, max: number): void {
-    this.healthInfo.innerHTML = `<strong>Health</strong><br>${current} / ${max}`;
+    const pct = Math.max(0, Math.min(100, (current / max) * 100));
+    this.healthInfo.innerHTML = `<strong>Health</strong>
+<div class="health-bar-container">
+  <div class="health-bar" style="width: ${pct}%"></div>
+</div>`;
   }
 
   /**
