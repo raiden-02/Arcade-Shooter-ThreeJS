@@ -69,6 +69,17 @@ export class UIManager {
       html += `Spread: ${pelletSpreadDeg}&deg;`;
     }
     this.weaponInfo.innerHTML = html;
+
+    const sanitized = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const cls = `weapon-${sanitized}`;
+    const ch = this.hud.crosshair;
+    Array.from(ch.classList)
+      .filter(c => c.startsWith('weapon-'))
+      .forEach(c => ch.classList.remove(c));
+    ch.classList.add(cls);
   }
   /**
    * Update top-left health display as a visual health bar.
