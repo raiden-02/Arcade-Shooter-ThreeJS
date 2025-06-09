@@ -4,19 +4,6 @@ export class PauseMenu {
   constructor() {
     this.container = document.createElement('div');
     this.container.id = 'pause-menu';
-    this.container.style.cssText = `
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: sans-serif;
-            z-index: 1000;
-            display: none;
-        `;
 
     const resumeBtn = document.createElement('button');
     resumeBtn.innerText = 'Resume';

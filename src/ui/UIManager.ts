@@ -18,53 +18,14 @@ export class UIManager {
     // Weapon info display
     this.weaponInfo = document.createElement('div');
     this.weaponInfo.id = 'weapon-info';
-    this.weaponInfo.style.cssText = `
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 14px;
-      pointer-events: none;
-      z-index: 500;
-    `;
     document.body.appendChild(this.weaponInfo);
     // Health info display
     this.healthInfo = document.createElement('div');
     this.healthInfo.id = 'health-info';
-    this.healthInfo.style.cssText = `
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 14px;
-      pointer-events: none;
-      z-index: 500;
-    `;
     document.body.appendChild(this.healthInfo);
     // Ammo info display
     this.ammoInfo = document.createElement('div');
     this.ammoInfo.id = 'ammo-info';
-    this.ammoInfo.style.cssText = `
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 14px;
-      pointer-events: none;
-      z-index: 500;
-    `;
     document.body.appendChild(this.ammoInfo);
   }
 

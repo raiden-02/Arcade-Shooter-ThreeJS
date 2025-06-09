@@ -4,17 +4,12 @@ export class HUD {
   constructor() {
     this.crosshair = document.createElement('div');
     this.crosshair.id = 'crosshair';
-    this.crosshair.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 4px;
-            height: 4px;
-            background: white;
-            transform: translate(-50%, -50%);
-            z-index: 500;
-            pointer-events: none;
-        `;
+
+    ['top', 'left', 'right', 'bottom'].forEach((side) => {
+      const line = document.createElement('span');
+      line.className = `line ${side}`;
+      this.crosshair.appendChild(line);
+    });
 
     document.body.appendChild(this.crosshair);
   }
