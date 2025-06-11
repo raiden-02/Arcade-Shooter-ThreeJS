@@ -62,6 +62,7 @@ export class Game {
     window.addEventListener('resize', () => this.onWindowResize());
 
     this.ui = new UIManager();
+    this.projectileManager.setUIManager(this.ui);
     // Initialize weapon info display for the default weapon
     const initialWeapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initialWeapon.getName(), initialWeapon.getOptions());

@@ -151,6 +151,7 @@ export class DevLevel extends BaseScene {
     this.projectileManager.setEnemyManager(this.enemyManager);
     // Provide player reference for projectile collision handling
     this.projectileManager.setPlayer(this.player);
+    this.projectileManager.setUIManager(this.ui);
     this.weaponManager = new WeaponManager(this.projectileManager);
     // Initialize first-person weapon view with per-weapon offsets
     const initialWeapon = this.weaponManager.getCurrentWeapon();
