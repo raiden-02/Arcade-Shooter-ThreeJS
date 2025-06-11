@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { EnemyManager } from '../enemy/EnemyManager';
 import { Player } from '../player/Player';
+import { UIManager } from '../ui/UIManager';
 
 import { drawDebugLine } from './DebugHelper';
 import { Projectile } from './Projectile';
@@ -15,6 +16,8 @@ export class ProjectileManager {
 
   // Reference to player for enemy projectile collisions
   private player?: Player;
+  private ui?: UIManager;
+
   constructor(
     private scene: THREE.Scene,
     private world: RAPIER.World,
@@ -25,6 +28,9 @@ export class ProjectileManager {
    */
   public setPlayer(player: Player): void {
     this.player = player;
+  }
+  public setUIManager(ui: UIManager): void {
+    this.ui = ui;
   }
   /**
    * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
@@ -54,6 +60,7 @@ export class ProjectileManager {
                   .toArray()
                   .map(v => v.toFixed(2))}`,
               );
+              this.ui?.showHitMarker();
             }
             // AOE damage always
             for (const enemy of this.enemyManager?.enemies || []) {
@@ -68,6 +75,7 @@ export class ProjectileManager {
                     ` (dist ${dist.toFixed(2)})`,
                 );
                 enemy.takeDamage(projectile.damage);
+                this.ui?.showHitMarker();
               }
             }
             // Remove explosive immediately
@@ -87,6 +95,7 @@ export class ProjectileManager {
               const enemyHit = this.enemyManager?.enemies.find(e => e.collider.handle === other);
               if (enemyHit && !enemyHit.isDead) {
                 enemyHit.takeDamage(projectile.damage);
+                this.ui?.showHitMarker();
               }
             } else if (projectile.ownerType === 'enemy' && this.player) {
               // Enemy-fired: check player hit
@@ -182,6 +191,7 @@ export class ProjectileManager {
             const sqrDist = center.distanceToSquared(pos);
             if (sqrDist <= radiusSq) {
               enemy.takeDamage(projectile.damage);
+              this.ui?.showHitMarker();
             }
           }
           projectile.active = false;

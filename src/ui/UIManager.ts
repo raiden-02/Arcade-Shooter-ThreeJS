@@ -99,4 +99,7 @@ export class UIManager {
     const status = reloading ? 'Reloading...' : `${currentAmmo} / ${magazineSize}`;
     this.ammoInfo.innerHTML = `<strong>Ammo</strong><br>${status}`;
   }
+  public showHitMarker(): void {
+    this.hud.showHitMarker();
+  }
 }

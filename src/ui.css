@@ -237,3 +237,49 @@ strong {
   width: 100%;
   transition: width 0.2s ease;
 }
+
+/* Hit marker displayed on successful enemy hits */
+#hit-marker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+}
+
+#hit-marker .hit-line {
+  position: absolute;
+  width: 2px;
+  height: 20px;
+  background: var(--cp-accent);
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+}
+
+#hit-marker .pos-diag {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#hit-marker .neg-diag {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+@keyframes hitmarker {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+#hit-marker.active {
+  animation: hitmarker 0.3s ease-out;
+}
