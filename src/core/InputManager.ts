@@ -20,6 +20,9 @@ export class InputManager {
   private keyStates: Map<string, boolean> = new Map();
   private buttonStates: Map<number, boolean> = new Map();
   private mouseDelta: THREE.Vector2 = new THREE.Vector2();
+  // Configurable look settings
+  private sensitivity: number = 1.0;
+  private invertY: boolean = false;
   private pointerLocked: boolean = false;
 
   // Action bindings
@@ -60,12 +63,14 @@ export class InputManager {
   }
 
   /**
-   * Returns and clears accumulated mouse movement delta.
+   * Returns and clears accumulated mouse movement delta, applying sensitivity and invertY.
    */
   public getMouseDelta(): THREE.Vector2 {
-    const delta = this.mouseDelta.clone();
+    const raw = this.mouseDelta.clone();
     this.mouseDelta.set(0, 0);
-    return delta;
+    const x = raw.x * this.sensitivity;
+    const y = raw.y * this.sensitivity * (this.invertY ? -1 : 1);
+    return new THREE.Vector2(x, y);
   }
 
   /**
@@ -92,5 +97,15 @@ export class InputManager {
     this.keyStates.clear();
     this.buttonStates.clear();
     this.mouseDelta.set(0, 0);
+  }
+
+  /** Set global mouse look sensitivity multiplier. */
+  public setSensitivity(value: number): void {
+    this.sensitivity = Math.max(0, value);
+  }
+
+  /** Enable/disable Y-axis inversion. */
+  public setInvertY(enabled: boolean): void {
+    this.invertY = enabled;
   }
 }
