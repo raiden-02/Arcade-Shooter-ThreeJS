@@ -197,7 +197,10 @@ export class AssaultRifle extends Weapon {
       adsTransitionTime: 0.15,
       magazineSize: 30,
       reloadTime: 2.5,
-      spreadDeg: 1.0,
+      spreadDeg: 0.8,
+      bloomPerShot: 0.4,
+      bloomDecayRate: 4.0,
+      maxBloom: 4.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -229,6 +232,9 @@ export class SubMachineGun extends Weapon {
       magazineSize: 25,
       reloadTime: 2,
       spreadDeg: 1.2,
+      bloomPerShot: 0.6,
+      bloomDecayRate: 5.0,
+      maxBloom: 5.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -259,7 +265,10 @@ export class LightMachineGun extends Weapon {
       adsTransitionTime: 0.2,
       magazineSize: 100,
       reloadTime: 5,
-      spreadDeg: 1.0,
+      spreadDeg: 2.5,
+      bloomPerShot: 0.7,
+      bloomDecayRate: 3.0,
+      maxBloom: 6.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -290,6 +299,10 @@ export class Pistol extends Weapon {
       magazineSize: 12,
       reloadTime: 1.5,
       spreadDeg: 1.5,
+      bloomPerShot: 0.8,
+      bloomDecayRate: 6.0,
+      maxBloom: 5.0,
+      pixelsPerDeg: 4.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -322,6 +335,10 @@ export class Shotgun extends Weapon {
       magazineSize: 8,
       reloadTime: 3,
       spreadDeg: 0,
+      bloomPerShot: 1.0,
+      bloomDecayRate: 4.0,
+      maxBloom: 6.0,
+      pixelsPerDeg: 3.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -359,7 +376,11 @@ export class SniperRifle extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 5,
       reloadTime: 3.5,
-      spreadDeg: 0.5,
+      spreadDeg: 5.0,
+      bloomPerShot: 0.8,
+      bloomDecayRate: 2.0,
+      maxBloom: 10.0,
+      pixelsPerDeg: 5.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -389,6 +410,11 @@ export class MarksmanRifle extends Weapon {
       adsTransitionTime: 0.25,
       magazineSize: 10,
       reloadTime: 2.5,
+      spreadDeg: 3.0,
+      bloomPerShot: 0.7,
+      bloomDecayRate: 4.0,
+      maxBloom: 5.0,
+      pixelsPerDeg: 3.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -420,7 +446,11 @@ export class GrenadeLauncher extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 6,
       reloadTime: 4,
-      spreadDeg: 1.0,
+      spreadDeg: 1.5,
+      bloomPerShot: 1.0,
+      bloomDecayRate: 4.0,
+      maxBloom: 6.0,
+      pixelsPerDeg: 3.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -453,7 +483,11 @@ export class RocketLauncher extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 4,
       reloadTime: 4,
-      spreadDeg: 1.0,
+      spreadDeg: 2.0,
+      bloomPerShot: 1.2,
+      bloomDecayRate: 4.0,
+      maxBloom: 6.0,
+      pixelsPerDeg: 3.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
