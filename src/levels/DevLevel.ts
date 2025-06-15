@@ -203,7 +203,8 @@ export class DevLevel extends BaseScene {
   public update(delta: number): void {
     // Handle firing input
     const fire = this.input.isPressed(InputAction.Fire);
-    const opts = this.weaponManager.getCurrentWeapon().getOptions();
+    const weapon = this.weaponManager.getCurrentWeapon();
+    const opts = weapon.getOptions();
     if (fire) {
       if (opts.automatic) {
         this.shoot();
@@ -223,15 +224,15 @@ export class DevLevel extends BaseScene {
     this.enemyManager.update(delta, this.engine.getTime());
     // Update player health and ammo in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
-    const currentWeapon = this.weaponManager.getCurrentWeapon();
-    this.ui.updateAmmo(
-      currentWeapon.getCurrentAmmo(),
-      currentWeapon.getMagazineSize(),
-      currentWeapon.isReloading(),
-    );
-    // Aim-down-sights toggle
+    this.ui.updateAmmo(weapon.getCurrentAmmo(), weapon.getMagazineSize(), weapon.isReloading());
+    // Aim-down-sights toggle and HUD crosshair updates
     const aiming = this.input.isPressed(InputAction.Aim);
     this.weaponView.setADS(aiming);
+    // update weapon bloom and crosshair bloom in HUD
+    weapon.updateBloom(delta);
+    const totalSpread = weapon.getTotalSpreadDeg(aiming);
+    this.ui.hud.setSpread(totalSpread * weapon.getPixelsPerDeg());
+    this.ui.hud.setADS(aiming);
     // Smoothly interpolate camera FOV for ADS zoom
     const progress = this.weaponView.getADSProgress();
     this.camera.fov = THREE.MathUtils.lerp(this.defaultFov, this.adsFov, progress);
@@ -260,10 +261,18 @@ export class DevLevel extends BaseScene {
     const origin = raycaster.ray.origin
       .clone()
       .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
-    const direction = raycaster.ray.direction.clone();
+    let direction = raycaster.ray.direction.clone();
+    const aiming = this.input.isPressed(InputAction.Aim);
+    const weapon = this.weaponManager.getCurrentWeapon();
+    const totalSpread = weapon.getTotalSpreadDeg(aiming);
+    if (totalSpread > 0) {
+      const spreadRad = THREE.MathUtils.degToRad(totalSpread);
+      const axis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
+      direction = direction.applyAxisAngle(axis, (Math.random() - 0.5) * spreadRad).normalize();
+    }
     const time = this.engine.getTime();
-    if (this.weaponManager.tryFire(origin, direction, time)) {
-      const opts = this.weaponManager.getCurrentWeapon().getOptions();
+    if (weapon.tryFire(origin, direction, time)) {
+      const opts = weapon.getOptions();
       this.player.applyRecoil(opts.recoil ?? 0, (Math.random() - 0.5) * (opts.recoil ?? 0));
     }
   }
