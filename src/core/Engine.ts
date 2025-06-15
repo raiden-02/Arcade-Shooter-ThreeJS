@@ -9,6 +9,7 @@ import { InputManager } from './InputManager';
 import { NavMeshService } from './NavMeshService';
 import { PhysicsHelper } from './PhysicsHelper';
 import { IScene } from './Scene';
+import { SettingsService } from './SettingsService';
 import { SkyBox } from './SkyBox';
 
 /**
@@ -20,6 +21,7 @@ export class Engine {
   public renderer: THREE.WebGLRenderer;
   public input: InputManager;
   public physics: PhysicsHelper;
+  public settingsService!: SettingsService;
   public ui: UIManager;
   public navMesh: NavMeshService;
   // Yuka AI entity manager for steering behaviors and FSMs
@@ -33,17 +35,21 @@ export class Engine {
   public stateMachine: GameStateMachine;
 
   constructor(container?: HTMLElement) {
+    // Settings service (load persisted settings)
+    this.settingsService = new SettingsService();
     // Scene and renderer
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    // Apply user resolution scale
+    const { graphics } = this.settingsService.getSettings();
+    this.renderer.setPixelRatio(window.devicePixelRatio * graphics.resolutionScale);
     const mount = container ?? document.body;
     mount.appendChild(this.renderer.domElement);
 
-    // Camera
+    // Camera (use user FOV)
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      this.settingsService.getSettings().graphics.fov,
       window.innerWidth / window.innerHeight,
       0.1,
       1000,
@@ -54,12 +60,16 @@ export class Engine {
 
     // Input
     this.input = new InputManager();
+    // Apply input settings
+    const { mouseSensitivity, invertY } = this.settingsService.getSettings().input;
+    this.input.setSensitivity(mouseSensitivity);
+    this.input.setInvertY(invertY);
 
     // Physics
     this.physics = new PhysicsHelper();
 
-    // UI
-    this.ui = new UIManager();
+    // UI (includes settings panel)
+    this.ui = new UIManager(this.settingsService, this);
 
     // State machine
     this.stateMachine = new GameStateMachine();

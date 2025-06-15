@@ -1,3 +1,5 @@
+import type { Engine } from '../core/Engine';
+import { SettingsService } from '../core/SettingsService';
 import { WeaponOptions } from '../core/Weapon';
 
 import { HUD } from './HUD';
@@ -7,13 +9,16 @@ export class UIManager {
   pauseMenu: PauseMenu;
   hud: HUD;
   weaponInfo: HTMLDivElement;
-  // Health info display
   healthInfo: HTMLDivElement;
   /** Ammo info display (current magazine count / reload status) */
   ammoInfo: HTMLDivElement;
 
-  constructor() {
-    this.pauseMenu = new PauseMenu();
+  constructor(settingsService?: SettingsService, engine?: Engine) {
+    if (settingsService && engine) {
+      this.pauseMenu = new PauseMenu(settingsService, engine);
+    } else {
+      this.pauseMenu = new PauseMenu();
+    }
     this.hud = new HUD();
     // Weapon info display
     this.weaponInfo = document.createElement('div');

@@ -199,6 +199,23 @@ body {
   box-shadow: 0 0 12px var(--cp-accent);
 }
 
+#settings-panel {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+#settings-panel label {
+  color: var(--cp-primary);
+  font-size: 1em;
+}
+#settings-panel input[type='range'] {
+  width: 150px;
+}
+#settings-panel button {
+  margin-top: 8px;
+}
+
 #weapon-info,
 #health-info,
 #ammo-info {
