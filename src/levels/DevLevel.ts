@@ -228,13 +228,13 @@ export class DevLevel extends BaseScene {
     // Aim-down-sights toggle and HUD crosshair updates
     const aiming = this.input.isPressed(InputAction.Aim);
     this.weaponView.setADS(aiming);
-    // update weapon bloom and crosshair bloom in HUD
+    // update weapon bloom and crosshair morphing to ADS
     weapon.updateBloom(delta);
+    const progress = this.weaponView.getADSProgress();
     const totalSpread = weapon.getTotalSpreadDeg(aiming);
     this.ui.hud.setSpread(totalSpread * weapon.getPixelsPerDeg());
-    this.ui.hud.setADS(aiming);
-    // Smoothly interpolate camera FOV for ADS zoom
-    const progress = this.weaponView.getADSProgress();
+    this.ui.hud.setADSProgress(progress);
+    // smoothly interpolate camera FOV for ADS zoom
     this.camera.fov = THREE.MathUtils.lerp(this.defaultFov, this.adsFov, progress);
     this.camera.updateProjectionMatrix();
     this.weaponView.update(delta);

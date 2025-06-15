@@ -82,7 +82,7 @@ body {
   border-radius: 50%;
   box-shadow: 0 0 8px var(--cp-primary);
   transform: translate(-50%, -50%);
-  display: none;
+  opacity: 0;
 }
 
 /* Optional: Add a gap by shrinking the lines and/or increasing the circle size */
