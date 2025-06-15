@@ -40,6 +40,16 @@ export interface WeaponOptions {
   pelletCount?: number;
   // spread angle in degrees
   pelletSpreadDeg?: number;
+  /** Hip-fire base spread cone angle in degrees */
+  spreadDeg?: number;
+  /** Degrees added to the spread cone per shot (dynamic bloom) */
+  bloomPerShot?: number;
+  /** Degrees per second that bloom decays */
+  bloomDecayRate?: number;
+  /** Maximum dynamic bloom degrees */
+  maxBloom?: number;
+  /** Pixels of crosshair expansion per bloom degree */
+  pixelsPerDeg?: number;
   // vertical recoil angle per shot (radians)
   recoil?: number;
   // whether the weapon can fire continuously when holding the trigger
@@ -60,6 +70,12 @@ export interface WeaponOptions {
  */
 export abstract class Weapon {
   protected lastShotTime: number = 0;
+  /** Dynamic bloom state (degrees) */
+  private currentBloom: number;
+  private bloomPerShot: number;
+  private bloomDecayRate: number;
+  private maxBloom: number;
+  private pixelsPerDeg: number;
   /** Current ammo in magazine */
   protected currentAmmo: number;
   /** Reload state flag */
@@ -70,6 +86,12 @@ export abstract class Weapon {
   ) {
     this.currentAmmo = options.magazineSize;
     this.reloading = false;
+    // dynamic hip-fire bloom parameters
+    this.currentBloom = 0;
+    this.bloomPerShot = options.bloomPerShot ?? 0.5;
+    this.bloomDecayRate = options.bloomDecayRate ?? 2.0;
+    this.maxBloom = options.maxBloom ?? 4.0;
+    this.pixelsPerDeg = options.pixelsPerDeg ?? 2.0;
   }
 
   /**
@@ -98,6 +120,7 @@ export abstract class Weapon {
     this.lastShotTime = time;
     this.fire(origin, direction);
     this.currentAmmo--;
+    this.onShotFired();
     return true;
   }
 
@@ -132,6 +155,27 @@ export abstract class Weapon {
   public isReloading(): boolean {
     return this.reloading;
   }
+
+  /** Decay dynamic bloom over time; call each frame. */
+  public updateBloom(delta: number): void {
+    this.currentBloom = Math.max(0, this.currentBloom - this.bloomDecayRate * delta);
+  }
+
+  /** Total spread cone angle (degrees): base + dynamic bloom; zero if ADS. */
+  public getTotalSpreadDeg(isADS: boolean): number {
+    if (isADS) return 0;
+    return (this.options.spreadDeg ?? 0) + this.currentBloom;
+  }
+
+  /** Internal hook: increase bloom when a shot is fired. */
+  protected onShotFired(): void {
+    this.currentBloom = Math.min(this.maxBloom, this.currentBloom + this.bloomPerShot);
+  }
+
+  /** Pixels of crosshair expansion per bloom degree */
+  public getPixelsPerDeg(): number {
+    return this.pixelsPerDeg;
+  }
 }
 
 /** Assault Rifle: medium fire rate, moderate damage */
@@ -153,6 +197,7 @@ export class AssaultRifle extends Weapon {
       adsTransitionTime: 0.15,
       magazineSize: 30,
       reloadTime: 2.5,
+      spreadDeg: 1.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -183,6 +228,7 @@ export class SubMachineGun extends Weapon {
       adsTransitionTime: 0.1,
       magazineSize: 25,
       reloadTime: 2,
+      spreadDeg: 1.2,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -213,6 +259,7 @@ export class LightMachineGun extends Weapon {
       adsTransitionTime: 0.2,
       magazineSize: 100,
       reloadTime: 5,
+      spreadDeg: 1.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -242,6 +289,7 @@ export class Pistol extends Weapon {
       adsTransitionTime: 0.1,
       magazineSize: 12,
       reloadTime: 1.5,
+      spreadDeg: 1.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -273,6 +321,7 @@ export class Shotgun extends Weapon {
       adsTransitionTime: 0.2,
       magazineSize: 8,
       reloadTime: 3,
+      spreadDeg: 0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -310,6 +359,7 @@ export class SniperRifle extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 5,
       reloadTime: 3.5,
+      spreadDeg: 0.5,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -370,6 +420,7 @@ export class GrenadeLauncher extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 6,
       reloadTime: 4,
+      spreadDeg: 1.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -402,6 +453,7 @@ export class RocketLauncher extends Weapon {
       adsTransitionTime: 0.3,
       magazineSize: 4,
       reloadTime: 4,
+      spreadDeg: 1.0,
     });
   }
   protected fire(origin: THREE.Vector3, direction: THREE.Vector3) {

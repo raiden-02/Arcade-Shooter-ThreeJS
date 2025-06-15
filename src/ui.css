@@ -71,6 +71,20 @@ body {
   transform: translateY(-50%);
 }
 
+/* ADS (aim-down-sights) central dot for perfect accuracy */
+#crosshair .ads-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--cp-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cp-primary);
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
 /* Optional: Add a gap by shrinking the lines and/or increasing the circle size */
 
 /* Weapon-specific crosshair styles */
