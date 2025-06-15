@@ -1,6 +1,7 @@
 export class HUD {
   crosshair: HTMLDivElement;
   private hitMarker: HTMLDivElement;
+  private lastSpreadPx: number = 0;
 
   constructor() {
     this.crosshair = document.createElement('div');
@@ -13,7 +14,7 @@ export class HUD {
     });
     const dot = document.createElement('span');
     dot.className = 'ads-dot';
-    dot.style.display = 'none';
+    dot.style.opacity = '0';
     this.crosshair.appendChild(dot);
 
     document.body.appendChild(this.crosshair);
@@ -35,7 +36,6 @@ export class HUD {
     this.crosshair.style.display = 'none';
   }
   showHitMarker(): void {
-    console.log('Hit marker triggered');
     this.hitMarker.classList.remove('active');
     void this.hitMarker.offsetWidth;
     this.hitMarker.classList.add('active');
@@ -49,6 +49,7 @@ export class HUD {
     const bottom = this.crosshair.querySelector('.line.bottom') as HTMLElement;
     const left = this.crosshair.querySelector('.line.left') as HTMLElement;
     const right = this.crosshair.querySelector('.line.right') as HTMLElement;
+    this.lastSpreadPx = gapPx;
     top.style.top = `${-gapPx}px`;
     bottom.style.bottom = `${-gapPx}px`;
     left.style.left = `${-gapPx}px`;
@@ -59,10 +60,28 @@ export class HUD {
    * Toggle aim-down-sights crosshair mode.
    * Hides lines and shows central dot when ADS is active.
    */
+  /**
+   * Binary ADS toggle (0 or 1), calls setADSProgress internally.
+   */
   public setADS(active: boolean): void {
-    const lines = this.crosshair.querySelectorAll('.line');
-    lines.forEach(el => ((el as HTMLElement).style.display = active ? 'none' : 'block'));
+    this.setADSProgress(active ? 1 : 0);
+  }
+
+  /**
+   * Smoothly transition crosshair lines to center and fade in ADS dot.
+   * @param progress 0=hip-fire, 1=ADS
+   */
+  public setADSProgress(progress: number): void {
+    const lines = this.crosshair.querySelectorAll('.line') as NodeListOf<HTMLElement>;
+    lines.forEach(line => {
+      const gap = this.lastSpreadPx * (1 - progress);
+      if (line.classList.contains('top')) line.style.top = `${-gap}px`;
+      if (line.classList.contains('bottom')) line.style.bottom = `${-gap}px`;
+      if (line.classList.contains('left')) line.style.left = `${-gap}px`;
+      if (line.classList.contains('right')) line.style.right = `${-gap}px`;
+      line.style.opacity = `${1 - progress}`;
+    });
     const dot = this.crosshair.querySelector('.ads-dot') as HTMLElement;
-    dot.style.display = active ? 'block' : 'none';
+    dot.style.opacity = `${progress}`;
   }
 }
