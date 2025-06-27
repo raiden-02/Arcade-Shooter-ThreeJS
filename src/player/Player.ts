@@ -21,9 +21,13 @@ export class Player {
   private collider: RAPIER.Collider;
   private charController: RAPIER.KinematicCharacterController;
   private controller: PlayerController;
-  // Player health
+  // Player health and death state
   private maxHealth: number;
   private health: number;
+  private isDead: boolean = false;
+  private respawnDelay: number = 3.0; // seconds
+  private respawnTimer: number = 0;
+  private spawnPosition: RAPIER.Vector3;
 
   /**
    * @param scene - The Three.js scene to which the player is added.
@@ -37,6 +41,9 @@ export class Player {
     physics: PhysicsHelper,
     spawnPos: RAPIER.Vector3 = new RAPIER.Vector3(0, 2, 0),
   ) {
+    // Store spawn position for respawn
+    this.spawnPosition = spawnPos;
+
     // Create root object and add to scene
     this.root = new THREE.Object3D();
     scene.add(this.root);
@@ -106,6 +113,15 @@ export class Player {
    * @param delta - time since last frame (s)
    */
   public update(delta: number): void {
+    if (this.isDead) {
+      // If dead, count down to respawn
+      this.respawnTimer -= delta;
+      if (this.respawnTimer <= 0) {
+        this.respawn();
+      }
+      return;
+    }
+
     // Process input and drive kinematic controller
     this.controller.update(delta);
     // Sync root position to controller collider
@@ -136,12 +152,57 @@ export class Player {
    * Apply damage to the player.
    */
   public takeDamage(amount: number): void {
+    if (this.isDead) return;
     this.health = Math.max(0, this.health - amount);
+    if (this.health <= 0) {
+      this.die();
+    }
   }
   /**
    * Heal the player.
    */
   public heal(amount: number): void {
+    if (this.isDead) return; // Can't heal while dead
     this.health = Math.min(this.maxHealth, this.health + amount);
+  }
+  /**
+   * Handle player death: stop movement, hide model, start respawn timer.
+   */
+  private die(): void {
+    this.isDead = true;
+    this.respawnTimer = this.respawnDelay;
+    this.model.visible = false;
+    // Optionally: play death animation or sound
+  }
+  /**
+   * Respawn the player at the spawn position with full health.
+   */
+  private respawn(): void {
+    this.isDead = false;
+    this.health = this.maxHealth;
+    this.respawnTimer = 0;
+
+    // Reset collider position to spawn position
+    this.collider.setTranslation(this.spawnPosition);
+
+    // Show the model again
+    this.model.visible = true;
+
+    // Reset camera orientation
+    this.cameraRig.object.rotation.set(0, 0, 0);
+  }
+
+  /**
+   * Check if the player is currently dead.
+   */
+  public isPlayerDead(): boolean {
+    return this.isDead;
+  }
+
+  /**
+   * Get remaining respawn time.
+   */
+  public getRespawnTime(): number {
+    return Math.max(0, this.respawnTimer);
   }
 }

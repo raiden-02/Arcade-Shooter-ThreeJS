@@ -12,6 +12,8 @@ export class UIManager {
   healthInfo: HTMLDivElement;
   /** Ammo info display (current magazine count / reload status) */
   ammoInfo: HTMLDivElement;
+  /** Death screen overlay */
+  deathScreen: HTMLDivElement;
 
   constructor(settingsService?: SettingsService, engine?: Engine) {
     if (settingsService && engine) {
@@ -32,6 +34,11 @@ export class UIManager {
     this.ammoInfo = document.createElement('div');
     this.ammoInfo.id = 'ammo-info';
     document.body.appendChild(this.ammoInfo);
+    // Death screen overlay
+    this.deathScreen = document.createElement('div');
+    this.deathScreen.id = 'death-screen';
+    this.deathScreen.style.display = 'none';
+    document.body.appendChild(this.deathScreen);
   }
 
   showPause() {
@@ -106,5 +113,26 @@ export class UIManager {
   }
   public showHitMarker(): void {
     this.hud.showHitMarker();
+  }
+
+  /**
+   * Show death screen with respawn countdown.
+   */
+  public showDeathScreen(respawnTime: number): void {
+    const respawnSeconds = Math.ceil(respawnTime);
+    this.deathScreen.innerHTML = `
+      <div class="death-content">
+        <h1>YOU DIED</h1>
+        <p>Respawning in ${respawnSeconds} seconds...</p>
+      </div>
+    `;
+    this.deathScreen.style.display = 'flex';
+  }
+
+  /**
+   * Hide death screen.
+   */
+  public hideDeathScreen(): void {
+    this.deathScreen.style.display = 'none';
   }
 }
