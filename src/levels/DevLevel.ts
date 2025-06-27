@@ -42,6 +42,16 @@ export class DevLevel extends BaseScene {
       this.weaponManager.getCurrentWeapon().reload();
       return;
     }
+    // Debug: Take damage for testing (K key)
+    if (e.code === 'KeyK') {
+      console.log('Debug: Taking 50 damage');
+      this.player.takeDamage(50);
+    }
+    // Debug: Take fatal damage for testing (L key)
+    if (e.code === 'KeyL') {
+      console.log('Debug: Taking fatal damage');
+      this.player.takeDamage(this.player.getHealth());
+    }
     if (switched) {
       const curr = this.weaponManager.getCurrentWeapon();
       const opts = curr.getOptions();
@@ -201,43 +211,60 @@ export class DevLevel extends BaseScene {
    * Per-frame update.
    */
   public update(delta: number): void {
-    // Handle firing input
-    const fire = this.input.isPressed(InputAction.Fire);
-    const weapon = this.weaponManager.getCurrentWeapon();
-    const opts = weapon.getOptions();
-    if (fire) {
-      if (opts.automatic) {
-        this.shoot();
-      } else if (!this.wasFiring) {
-        this.shoot();
-        this.wasFiring = true;
+    // Handle firing input - only if player is alive
+    if (!this.player.isPlayerDead()) {
+      const fire = this.input.isPressed(InputAction.Fire);
+      const weapon = this.weaponManager.getCurrentWeapon();
+      const opts = weapon.getOptions();
+      if (fire) {
+        if (opts.automatic) {
+          this.shoot();
+        } else if (!this.wasFiring) {
+          this.shoot();
+          this.wasFiring = true;
+        }
+      } else {
+        this.wasFiring = false;
       }
     } else {
-      this.wasFiring = false;
+      this.wasFiring = false; // Stop firing when dead
     }
 
     // Update systems
     this.player.update(delta);
+
+    // Show respawn timer if dead
+    if (this.player.isPlayerDead()) {
+      const respawnTime = this.player.getRespawnTime();
+      console.log('Player is dead, showing death screen with respawn time:', respawnTime);
+      this.ui.showDeathScreen(respawnTime);
+    } else {
+      this.ui.hideDeathScreen();
+    }
+
     this.projectileManager.update(delta);
     this.projectileManager.handleCollisions(this.physics.eventQueue);
     // Update enemies (movement, shooting, UI)
     this.enemyManager.update(delta, this.engine.getTime());
     // Update player health and ammo in UI
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+    const weapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateAmmo(weapon.getCurrentAmmo(), weapon.getMagazineSize(), weapon.isReloading());
-    // Aim-down-sights toggle and HUD crosshair updates
-    const aiming = this.input.isPressed(InputAction.Aim);
-    this.weaponView.setADS(aiming);
-    // update weapon bloom and crosshair morphing to ADS
-    weapon.updateBloom(delta);
-    const progress = this.weaponView.getADSProgress();
-    const totalSpread = weapon.getTotalSpreadDeg(aiming);
-    this.ui.hud.setSpread(totalSpread * weapon.getPixelsPerDeg());
-    this.ui.hud.setADSProgress(progress);
-    // smoothly interpolate camera FOV for ADS zoom
-    this.camera.fov = THREE.MathUtils.lerp(this.defaultFov, this.adsFov, progress);
-    this.camera.updateProjectionMatrix();
-    this.weaponView.update(delta);
+    // Aim-down-sights toggle and HUD crosshair updates - only if alive
+    if (!this.player.isPlayerDead()) {
+      const aiming = this.input.isPressed(InputAction.Aim);
+      this.weaponView.setADS(aiming);
+      // update weapon bloom and crosshair morphing to ADS
+      weapon.updateBloom(delta);
+      const progress = this.weaponView.getADSProgress();
+      const totalSpread = weapon.getTotalSpreadDeg(aiming);
+      this.ui.hud.setSpread(totalSpread * weapon.getPixelsPerDeg());
+      this.ui.hud.setADSProgress(progress);
+      // smoothly interpolate camera FOV for ADS zoom
+      this.camera.fov = THREE.MathUtils.lerp(this.defaultFov, this.adsFov, progress);
+      this.camera.updateProjectionMatrix();
+      this.weaponView.update(delta);
+    }
   }
 
   /**
