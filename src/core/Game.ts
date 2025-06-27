@@ -109,6 +109,16 @@ export class Game {
         this.weaponManager.nextWeapon();
         switched = true;
       }
+      // Debug: Take damage for testing (K key)
+      if (e.code === 'KeyK') {
+        console.log('Debug: Taking 50 damage');
+        this.player.takeDamage(50);
+      }
+      // Debug: Take fatal damage for testing (L key)
+      if (e.code === 'KeyL') {
+        console.log('Debug: Taking fatal damage');
+        this.player.takeDamage(this.player.getHealth());
+      }
       if (switched) {
         const current = this.weaponManager.getCurrentWeapon();
         this.ui.updateWeaponInfo(current.getName(), current.getOptions());
@@ -165,20 +175,38 @@ export class Game {
     const elapsedTime = this.clock.getElapsedTime();
 
     this.physics.step(delta);
-    // Handle firing input (automatic vs. semi-auto)
-    const firePressed = this.input.isPressed(InputAction.Fire);
-    const currentOpts = this.weaponManager.getCurrentWeapon().getOptions();
-    if (firePressed) {
-      if (currentOpts.automatic) {
-        this.shoot();
-      } else if (!this.isFiring) {
-        this.shoot();
-        this.isFiring = true;
+
+    // Handle firing input (automatic vs. semi-auto) - only if player is alive
+    if (!this.player.isPlayerDead()) {
+      const firePressed = this.input.isPressed(InputAction.Fire);
+      const currentOpts = this.weaponManager.getCurrentWeapon().getOptions();
+      if (firePressed) {
+        if (currentOpts.automatic) {
+          this.shoot();
+        } else if (!this.isFiring) {
+          this.shoot();
+          this.isFiring = true;
+        }
+      } else {
+        this.isFiring = false;
       }
     } else {
-      this.isFiring = false;
+      this.isFiring = false; // Stop firing when dead
     }
+
     this.player.update(delta);
+
+    // Update health display
+    this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
+
+    // Show respawn timer if dead
+    if (this.player.isPlayerDead()) {
+      const respawnTime = this.player.getRespawnTime();
+      this.ui.showDeathScreen(respawnTime);
+    } else {
+      this.ui.hideDeathScreen();
+    }
+
     this.projectileManager.update(delta);
     // Handle collisions with the environment (floor, walls, etc.)
     this.projectileManager.handleCollisions(this.physics.eventQueue);
