@@ -3,15 +3,7 @@ import * as THREE from 'three';
 
 import { CollisionGroups } from '../core/CollisionGroups';
 import { ProjectileManager } from '../core/ProjectileManager';
-import {
-  WeaponOptions,
-  Pistol,
-  AssaultRifle,
-  SubMachineGun,
-  LightMachineGun,
-  MarksmanRifle,
-  SniperRifle,
-} from '../core/Weapon';
+import { WeaponOptions, AssaultRifle } from '../core/Weapon';
 import { Player } from '../player/Player';
 
 export class Enemy {
@@ -44,17 +36,7 @@ export class Enemy {
     this.player = player;
     this.camera = camera;
     this.world = world;
-    // Choose random bullet weapon
-    const weaponClasses = [
-      Pistol,
-      AssaultRifle,
-      SubMachineGun,
-      LightMachineGun,
-      MarksmanRifle,
-      SniperRifle,
-    ];
-    const idx = Math.floor(Math.random() * weaponClasses.length);
-    const weapon = new weaponClasses[idx](projectileManager);
+    const weapon = new AssaultRifle(projectileManager);
     this.weaponOpts = weapon.getOptions();
     // Limit AI fire rate to 1 shot per second
     this.fireRate = 0.5;

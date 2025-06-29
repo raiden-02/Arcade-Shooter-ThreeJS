@@ -153,6 +153,7 @@ export class Player {
    */
   public takeDamage(amount: number): void {
     if (this.isDead) return;
+    console.log('Taking damage:', amount);
     this.health = Math.max(0, this.health - amount);
     if (this.health <= 0) {
       this.die();
