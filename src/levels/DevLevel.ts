@@ -236,7 +236,7 @@ export class DevLevel extends BaseScene {
     // Show respawn timer if dead
     if (this.player.isPlayerDead()) {
       const respawnTime = this.player.getRespawnTime();
-      console.log('Player is dead, showing death screen with respawn time:', respawnTime);
+      // console.log('Player is dead, showing death screen with respawn time:', respawnTime);
       this.ui.showDeathScreen(respawnTime);
     } else {
       this.ui.hideDeathScreen();
