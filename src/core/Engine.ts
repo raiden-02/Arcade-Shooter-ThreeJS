@@ -87,12 +87,16 @@ export class Engine {
     // Skybox load from public folder
     const basePath = import.meta.env.BASE_URL;
     new SkyBox(this.renderer, this.scene, `${basePath}skybox/`);
-    // Initialize NavMeshService for pathfinding (expect navmesh at public/navmesh/navmesh.glb)
+
+    // Initialize NavMeshService for pathfinding (temporarily disabled until Phase 4)
+    // TODO: Re-enable when we implement AI pathfinding and create the navmesh file
     this.navMesh = new NavMeshService(this.scene);
-    this.navMesh
-      .load(`${basePath}navmesh/navmesh.glb`)
-      .then(() => console.log('NavMesh loaded successfully'))
-      .catch(err => console.error('Failed to load NavMesh:', err));
+    // this.navMesh
+    //   .load(`${basePath}navmesh/navmesh.glb`)
+    //   .then(() => console.log('NavMesh loaded successfully'))
+    //   .catch(err => console.error('Failed to load NavMesh:', err));
+    console.log('NavMesh loading temporarily disabled - will be enabled in Phase 4');
+
     // Yuka AI: entity manager for steering behaviors and state machines
     this.entityManager = new EntityManager();
 
