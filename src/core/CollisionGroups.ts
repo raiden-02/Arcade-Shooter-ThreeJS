@@ -1,4 +1,3 @@
-// src/core/CollisionGroups.ts
 
 export enum CollisionGroups {
   NONE = 0,

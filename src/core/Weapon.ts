@@ -1,4 +1,3 @@
-// src/core/Weapon.ts
 import * as THREE from 'three';
 
 // Weapon models are placed in public/weapons; paths below reference that folder.

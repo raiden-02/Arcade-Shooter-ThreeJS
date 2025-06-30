@@ -1,4 +1,3 @@
-//src/core/Projectile.ts
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 

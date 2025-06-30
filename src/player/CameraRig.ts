@@ -1,4 +1,3 @@
-// /src/player/CameraRig.ts
 import * as THREE from 'three';
 
 export class CameraRig {

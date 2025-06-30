@@ -1,4 +1,3 @@
-// /src/core/InputManager.ts
 import * as THREE from 'three';
 
 export enum InputAction {

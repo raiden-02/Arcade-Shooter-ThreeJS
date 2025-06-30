@@ -1,4 +1,3 @@
-// src/core/GameStateMachine.ts
 // Simple finite state machine for global game states
 export enum GameState {
   Boot = 'Boot',
