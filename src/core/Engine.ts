@@ -1,4 +1,3 @@
-// src/core/Engine.ts
 import * as THREE from 'three';
 import { EntityManager } from 'yuka';
 

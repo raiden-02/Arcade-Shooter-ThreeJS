@@ -1,4 +1,3 @@
-// src/core/SkyBox.ts
 import * as THREE from 'three';
 
 /**

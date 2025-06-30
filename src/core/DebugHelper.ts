@@ -1,4 +1,3 @@
-//src/core/DebugHelper.ts
 import * as THREE from 'three';
 
 export function drawDebugLine(

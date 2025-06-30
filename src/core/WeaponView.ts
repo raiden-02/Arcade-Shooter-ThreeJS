@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-// Removed unused GLTF type import; loadGLTF is typed in AssetLoader
 
 import { loadGLTF, loadModel } from './AssetLoader';
 

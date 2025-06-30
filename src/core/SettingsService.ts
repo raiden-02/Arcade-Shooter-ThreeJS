@@ -1,4 +1,3 @@
-// src/core/SettingsService.ts
 // Service to manage loading, saving, and providing game settings at runtime.
 
 import { GameSettings, loadSettings, saveSettings } from './GameSettings';

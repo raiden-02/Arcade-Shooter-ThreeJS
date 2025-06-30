@@ -1,4 +1,3 @@
-// src/core/WeaponManager.ts
 import * as THREE from 'three';
 
 import { ProjectileManager } from './ProjectileManager';

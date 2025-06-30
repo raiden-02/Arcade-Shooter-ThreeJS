@@ -1,4 +1,3 @@
-// src/core/Scene.ts
 import * as THREE from 'three';
 
 import { UIManager } from '../ui/UIManager';

@@ -1,5 +1,3 @@
-//src/player/PlayerController.ts
-
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 

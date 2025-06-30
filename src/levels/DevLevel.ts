@@ -1,4 +1,3 @@
-// src/levels/DevLevel.ts
 import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
@@ -88,16 +87,15 @@ export class DevLevel extends BaseScene {
    * Level initialization: setup floor, lighting, player, enemies, UI.
    */
   public init(): void {
-    // Create floor physics collider
     this.physics.createFloorCollider(new RAPIER.Vector3(0, -0.5, 0), new RAPIER.Vector3(50, 1, 50));
 
-    // Create floor mesh
     const floorGeom = new THREE.BoxGeometry(50, 1, 50);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
     const floorMesh = new THREE.Mesh(floorGeom, floorMat);
     floorMesh.position.set(0, -0.5, 0);
     floorMesh.receiveShadow = true;
     this.scene.add(floorMesh);
+
     // Add a demo wall for line-of-sight visualization
     const wallGeom = new THREE.BoxGeometry(1, 5, 20);
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
@@ -107,11 +105,10 @@ export class DevLevel extends BaseScene {
     wall.receiveShadow = true;
     this.scene.add(wall);
 
-    // Add a directional light
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 10, 5);
     this.scene.add(light);
-    // Create simple obstacles (walls and cover) for testing AI navigation and cover
+
     const addObstacle = (pos: THREE.Vector3, size: THREE.Vector3, color = 0x888888) => {
       // Mesh
       const geom = new THREE.BoxGeometry(size.x, size.y, size.z);
@@ -135,20 +132,25 @@ export class DevLevel extends BaseScene {
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
       this.physics.world.createCollider(colliderDesc, body);
     };
+
     // Walls
     addObstacle(new THREE.Vector3(0, 2.5, -15), new THREE.Vector3(20, 5, 1));
     addObstacle(new THREE.Vector3(-15, 2.5, 0), new THREE.Vector3(1, 5, 20));
     addObstacle(new THREE.Vector3(15, 2.5, 0), new THREE.Vector3(1, 5, 20));
+
     // Cover crates
     addObstacle(new THREE.Vector3(5, 0.5, -5), new THREE.Vector3(2, 1, 2), 0x336633);
     addObstacle(new THREE.Vector3(-5, 0.5, 5), new THREE.Vector3(2, 1, 2), 0x663333);
     addObstacle(new THREE.Vector3(0, 0.5, 0), new THREE.Vector3(2, 1, 2), 0x333366);
+
     // Create player and gameplay systems
     this.player = new Player(this.scene, this.input, this.physics);
+
     // Use player camera for rendering and raycasting
     const playerCam = this.player.getCamera();
     this.engine.camera = playerCam;
     this.camera = playerCam;
+
     // Set up projectile and enemy systems with AI
     this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
     this.enemyManager = new EnemyManager(
@@ -159,10 +161,12 @@ export class DevLevel extends BaseScene {
       this.camera,
     );
     this.projectileManager.setEnemyManager(this.enemyManager);
+
     // Provide player reference for projectile collision handling
     this.projectileManager.setPlayer(this.player);
     this.projectileManager.setUIManager(this.ui);
     this.weaponManager = new WeaponManager(this.projectileManager);
+
     // Initialize first-person weapon view with per-weapon offsets
     const initialWeapon = this.weaponManager.getCurrentWeapon();
     const initialOpts = initialWeapon.getOptions();
@@ -176,6 +180,7 @@ export class DevLevel extends BaseScene {
     if (initialOpts.modelPath) {
       this.weaponView.load(`${basePath}${initialOpts.modelPath}`);
     }
+
     // Configure ADS offsets for this weapon
     const defaultOffset = initialOpts.viewOffset?.clone() ?? new THREE.Vector3(0.3, -0.35, -0.5);
     const defaultRot =
@@ -184,6 +189,7 @@ export class DevLevel extends BaseScene {
     const adsRot = initialOpts.adsRotationOffset?.clone() ?? defaultRot.clone();
     const adsTime = initialOpts.adsTransitionTime ?? 0.15;
     this.weaponView.configureADS(adsOffset, adsRot, adsTime);
+
     // Store camera FOV settings for ADS zoom
     this.defaultFov = this.camera.fov;
     this.adsFov = initialOpts.adsFov ?? this.defaultFov * 0.75;
@@ -203,6 +209,7 @@ export class DevLevel extends BaseScene {
       initWeapon.getMagazineSize(),
       initWeapon.isReloading(),
     );
+
     // Weapon switching input
     window.addEventListener('keydown', this.onKeyDown);
   }

@@ -1,4 +1,3 @@
-// src/core/GameSettings.ts
 // Defines input and graphics settings and persistence helpers.
 
 /** Mouse/inversion settings for camera control */
