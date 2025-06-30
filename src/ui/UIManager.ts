@@ -10,9 +10,7 @@ export class UIManager {
   hud: HUD;
   weaponInfo: HTMLDivElement;
   healthInfo: HTMLDivElement;
-  /** Ammo info display (current magazine count / reload status) */
   ammoInfo: HTMLDivElement;
-  /** Death screen overlay */
   deathScreen: HTMLDivElement;
 
   constructor(settingsService?: SettingsService, engine?: Engine) {
@@ -26,14 +24,17 @@ export class UIManager {
     this.weaponInfo = document.createElement('div');
     this.weaponInfo.id = 'weapon-info';
     document.body.appendChild(this.weaponInfo);
+
     // Health info display
     this.healthInfo = document.createElement('div');
     this.healthInfo.id = 'health-info';
     document.body.appendChild(this.healthInfo);
+
     // Ammo info display
     this.ammoInfo = document.createElement('div');
     this.ammoInfo.id = 'ammo-info';
     document.body.appendChild(this.ammoInfo);
+
     // Death screen overlay
     this.deathScreen = document.createElement('div');
     this.deathScreen.id = 'death-screen';
