@@ -1,12 +1,16 @@
 import type { Engine } from '../core/Engine';
 import { GameState } from '../core/GameStateMachine';
 
+import { SettingsPanel } from './SettingsPanel';
+
 export class MainMenu {
   container: HTMLDivElement;
   private engine: Engine;
+  private settingsPanel?: SettingsPanel;
 
-  constructor(engine: Engine) {
+  constructor(engine: Engine, settingsPanel?: SettingsPanel) {
     this.engine = engine;
+    this.settingsPanel = settingsPanel;
     this.container = document.createElement('div');
     this.container.id = 'main-menu';
     this.container.className = 'main-menu';
@@ -48,8 +52,11 @@ export class MainMenu {
 
     settingsBtn?.addEventListener('click', () => {
       console.log('Settings button clicked');
-      // TODO: Implement settings menu
-      alert('Settings menu coming soon!');
+      if (this.settingsPanel) {
+        this.settingsPanel.toggle();
+      } else {
+        alert('Settings panel not available');
+      }
     });
 
     quitBtn?.addEventListener('click', () => {
@@ -71,6 +78,10 @@ export class MainMenu {
 
   public hide(): void {
     this.container.style.display = 'none';
+    // Hide settings panel when hiding main menu
+    if (this.settingsPanel) {
+      this.settingsPanel.hide();
+    }
   }
 
   public isVisible(): boolean {
