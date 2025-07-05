@@ -3,10 +3,12 @@ import { SettingsService } from '../core/SettingsService';
 import { WeaponOptions } from '../core/Weapon';
 
 import { HUD } from './HUD';
+import { MainMenu } from './MainMenu';
 import { PauseMenu } from './PauseMenu';
 
 export class UIManager {
   pauseMenu: PauseMenu;
+  mainMenu: MainMenu;
   hud: HUD;
   weaponInfo: HTMLDivElement;
   healthInfo: HTMLDivElement;
@@ -16,8 +18,12 @@ export class UIManager {
   constructor(settingsService?: SettingsService, engine?: Engine) {
     if (settingsService && engine) {
       this.pauseMenu = new PauseMenu(settingsService, engine);
+      this.mainMenu = new MainMenu(engine);
     } else {
       this.pauseMenu = new PauseMenu();
+      // MainMenu requires engine, so create a minimal placeholder
+      // This branch is for backwards compatibility
+      throw new Error('MainMenu requires Engine parameter');
     }
     this.hud = new HUD();
     // Weapon info display
@@ -135,5 +141,17 @@ export class UIManager {
    */
   public hideDeathScreen(): void {
     this.deathScreen.style.display = 'none';
+  }
+
+  showMainMenu() {
+    this.mainMenu.show();
+    this.hud.hide();
+    this.weaponInfo.style.display = 'none';
+    this.healthInfo.style.display = 'none';
+    this.ammoInfo.style.display = 'none';
+  }
+
+  hideMainMenu() {
+    this.mainMenu.hide();
   }
 }

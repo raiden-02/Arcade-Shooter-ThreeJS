@@ -74,10 +74,15 @@ export class Engine {
     this.stateMachine = new GameStateMachine();
     // Tie UI and pointer lock behavior to state transitions
     this.stateMachine.onStateChange((_, next) => {
-      if (next === GameState.Paused) {
+      if (next === GameState.MainMenu) {
+        this.ui.showMainMenu();
+        this.ui.hidePause();
+      } else if (next === GameState.Paused) {
         this.ui.showPause();
+        this.ui.hideMainMenu();
       } else if (next === GameState.Playing) {
         this.ui.hidePause();
+        this.ui.hideMainMenu();
         this.renderer.domElement.requestPointerLock();
         this.clock.getDelta();
       }
