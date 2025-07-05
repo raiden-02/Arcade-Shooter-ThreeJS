@@ -192,28 +192,126 @@ body {
   cursor: pointer;
   box-shadow: 0 0 8px var(--cp-primary);
   transition: all 0.3s ease;
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 #pause-menu button:hover {
   color: var(--cp-accent);
   border-color: var(--cp-accent);
   box-shadow: 0 0 12px var(--cp-accent);
+  background: rgba(0, 255, 255, 0.1);
 }
 
-#settings-panel {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+/* Unified Settings Panel */
+.settings-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--cp-bg-main);
+  border: 2px solid var(--cp-primary);
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 0 30px var(--cp-primary);
+  z-index: 2000;
+  backdrop-filter: blur(10px);
 }
-#settings-panel label {
+
+.settings-title {
   color: var(--cp-primary);
-  font-size: 1em;
+  text-align: center;
+  margin-bottom: 20px;
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--cp-primary);
 }
-#settings-panel input[type='range'] {
-  width: 150px;
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
 }
-#settings-panel button {
-  margin-top: 8px;
+
+.settings-label {
+  color: var(--cp-primary);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9em;
+  font-weight: 600;
+  min-width: 150px;
+}
+
+.settings-slider {
+  flex: 1;
+  height: 6px;
+  background: var(--cp-bg-secondary);
+  border: 1px solid var(--cp-primary);
+  border-radius: 3px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--cp-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--cp-primary);
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--cp-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px var(--cp-primary);
+}
+
+.settings-value {
+  color: var(--cp-accent);
+  font-family: 'Orbitron', monospace;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: right;
+}
+
+.settings-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cp-primary);
+  cursor: pointer;
+}
+
+.settings-close-btn {
+  background: var(--cp-primary);
+  color: var(--cp-bg-main);
+  border: none;
+  padding: 10px 20px;
+  margin-top: 20px;
+  width: 100%;
+  font-family: 'Orbitron', monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.settings-close-btn:hover {
+  background: var(--cp-accent);
+  box-shadow: 0 0 15px var(--cp-accent);
 }
 
 #weapon-info,

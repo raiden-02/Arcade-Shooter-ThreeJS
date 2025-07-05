@@ -5,11 +5,13 @@ import { WeaponOptions } from '../core/Weapon';
 import { HUD } from './HUD';
 import { MainMenu } from './MainMenu';
 import { PauseMenu } from './PauseMenu';
+import { SettingsPanel } from './SettingsPanel';
 
 export class UIManager {
   pauseMenu: PauseMenu;
   mainMenu: MainMenu;
   hud: HUD;
+  settingsPanel: SettingsPanel;
   weaponInfo: HTMLDivElement;
   healthInfo: HTMLDivElement;
   ammoInfo: HTMLDivElement;
@@ -17,13 +19,14 @@ export class UIManager {
 
   constructor(settingsService?: SettingsService, engine?: Engine) {
     if (settingsService && engine) {
-      this.pauseMenu = new PauseMenu(settingsService, engine);
-      this.mainMenu = new MainMenu(engine);
+      this.settingsPanel = new SettingsPanel(settingsService, engine);
+      this.pauseMenu = new PauseMenu(settingsService, engine, this.settingsPanel);
+      this.mainMenu = new MainMenu(engine, this.settingsPanel);
     } else {
       this.pauseMenu = new PauseMenu();
       // MainMenu requires engine, so create a minimal placeholder
       // This branch is for backwards compatibility
-      throw new Error('MainMenu requires Engine parameter');
+      throw new Error('MainMenu and SettingsPanel require Engine and SettingsService parameters');
     }
     this.hud = new HUD();
     // Weapon info display
