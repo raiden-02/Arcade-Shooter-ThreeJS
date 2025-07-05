@@ -22,5 +22,5 @@ fsm.onStateChange((prev, next) => {
 // Start the engine loop
 engine.start();
 
-// Kick off by transitioning to Playing state
-fsm.transition(GameState.Playing);
+// Start with main menu instead of jumping directly to game
+fsm.transition(GameState.MainMenu);

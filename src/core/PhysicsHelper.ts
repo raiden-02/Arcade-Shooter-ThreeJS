@@ -1,4 +1,3 @@
-
 import * as RAPIER from '@dimforge/rapier3d';
 
 import { CollisionGroups } from './CollisionGroups';

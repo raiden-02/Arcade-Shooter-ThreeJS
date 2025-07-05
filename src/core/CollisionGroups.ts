@@ -1,4 +1,3 @@
-
 export enum CollisionGroups {
   NONE = 0,
   DEFAULT = 0b0001,
