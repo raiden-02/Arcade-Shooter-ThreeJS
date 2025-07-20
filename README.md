@@ -1,6 +1,6 @@
 <!-- README.md -->
 
-# My FPS Game
+# CyberRunner
 
 Play an in-browser 3D first-person shooter built with Three.js, Rapier physics, and Vite.
 

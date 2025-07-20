@@ -1,4 +1,4 @@
-# FPS Game Server
+# CyberRunner
 
 WebSocket server for real-time multiplayer FPS gameplay using Socket.io.
 
