@@ -1,0 +1,32 @@
+{
+  "name": "fps-game-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for FPS multiplayer game",
+  "main": "server.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "keywords": [
+    "websocket",
+    "multiplayer",
+    "game",
+    "fps"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/cors": "^2.8.17",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  }
+}

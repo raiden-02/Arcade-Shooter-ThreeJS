@@ -32,6 +32,7 @@
     "@dimforge/rapier3d": "^0.15.0",
     "ecs-three": "^1.0.20",
     "ecsy": "^0.4.2",
+    "socket.io-client": "^4.7.5",
     "three": "^0.174.0",
     "three-pathfinding": "^1.1.4",
     "yuka": "^0.7.8"

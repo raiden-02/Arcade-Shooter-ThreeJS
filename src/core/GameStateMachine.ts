@@ -2,6 +2,8 @@
 export enum GameState {
   Boot = 'Boot',
   MainMenu = 'MainMenu',
+  Connecting = 'Connecting', // New - Connecting to server
+  Lobby = 'Lobby', // New - In multiplayer lobby
   Playing = 'Playing',
   Paused = 'Paused',
   GameOver = 'GameOver',
@@ -24,10 +26,12 @@ export class GameStateMachine {
   private transitions: Record<GameState, GameState[]> = {
     // Allow boot to move directly to main menu or skip to playing
     [GameState.Boot]: [GameState.MainMenu, GameState.Playing],
-    [GameState.MainMenu]: [GameState.Playing],
-    [GameState.Playing]: [GameState.Paused, GameState.GameOver],
-    [GameState.Paused]: [GameState.Playing, GameState.MainMenu],
-    [GameState.GameOver]: [GameState.MainMenu],
+    [GameState.MainMenu]: [GameState.Playing, GameState.Connecting],
+    [GameState.Connecting]: [GameState.Lobby, GameState.MainMenu], // Can go to lobby or back to menu on error
+    [GameState.Lobby]: [GameState.Playing, GameState.MainMenu], // Can start game or leave
+    [GameState.Playing]: [GameState.Paused, GameState.GameOver, GameState.Lobby], // Can pause, end, or return to lobby
+    [GameState.Paused]: [GameState.Playing, GameState.MainMenu, GameState.Lobby],
+    [GameState.GameOver]: [GameState.MainMenu, GameState.Lobby],
   };
 
   /**

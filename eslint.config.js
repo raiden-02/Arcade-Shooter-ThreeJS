@@ -10,13 +10,39 @@ export default [
     ignores: ['node_modules', 'dist', 'build'],
   },
   {
-    files: ['**/*.ts'],
+    files: ['src/**/*.ts', 'vite.config.ts'],
     languageOptions: {
       parser: parser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+      import: importPlugin,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          alphabetize: { order: 'asc', caseInsensitive: true },
+          'newlines-between': 'always',
+        },
+      ],
+    },
+  },
+  {
+    files: ['server/**/*.ts'],
+    languageOptions: {
+      parser: parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './server/tsconfig.json',
       },
     },
     plugins: {

@@ -1,5 +1,6 @@
 import type { Engine } from '../core/Engine';
 import { GameState } from '../core/GameStateMachine';
+import type { MultiplayerEngine } from '../core/MultiplayerEngine';
 
 import { SettingsPanel } from './SettingsPanel';
 
@@ -22,12 +23,17 @@ export class MainMenu {
           <p class="game-subtitle">Fast-Paced Cyberpunk FPS</p>
           
           <div class="main-menu-buttons">
-            <button id="play-btn" class="menu-btn primary">PLAY</button>
+            <button id="singleplayer-btn" class="menu-btn primary">SINGLEPLAYER</button>
+            <button id="multiplayer-btn" class="menu-btn">MULTIPLAYER</button>
             <button id="settings-btn" class="menu-btn">SETTINGS</button>
             <button id="quit-btn" class="menu-btn">QUIT</button>
           </div>
           
-          <div class="version-info">v0.1.0-alpha</div>
+          <div class="multiplayer-status" id="connection-status" style="display: none;">
+            <span id="status-text">Disconnected</span>
+          </div>
+          
+          <div class="version-info">v0.1.0-alpha (Multiplayer)</div>
         </div>
       </div>
     `;
@@ -41,13 +47,40 @@ export class MainMenu {
   }
 
   private setupEventListeners(): void {
-    const playBtn = this.container.querySelector('#play-btn') as HTMLButtonElement;
+    const singleplayerBtn = this.container.querySelector('#singleplayer-btn') as HTMLButtonElement;
+    const multiplayerBtn = this.container.querySelector('#multiplayer-btn') as HTMLButtonElement;
     const settingsBtn = this.container.querySelector('#settings-btn') as HTMLButtonElement;
     const quitBtn = this.container.querySelector('#quit-btn') as HTMLButtonElement;
 
-    playBtn?.addEventListener('click', () => {
-      console.log('Play button clicked - transitioning to Playing state');
+    singleplayerBtn?.addEventListener('click', () => {
+      console.log('Singleplayer button clicked - transitioning to Playing state');
       this.engine.stateMachine.transition(GameState.Playing);
+    });
+
+    multiplayerBtn?.addEventListener('click', async () => {
+      console.log('Multiplayer button clicked');
+      const multiplayerEngine = this.engine as MultiplayerEngine;
+
+      // Check if it's actually a MultiplayerEngine
+      if ('connectToServer' in multiplayerEngine) {
+        this.updateConnectionStatus('Connecting...');
+        const connected = await multiplayerEngine.connectToServer();
+
+        if (connected) {
+          this.updateConnectionStatus('Connected');
+          // Join as player with default name
+          multiplayerEngine.joinAsPlayer('Player_' + Date.now().toString().slice(-4));
+
+          // For testing, automatically create a room
+          setTimeout(() => {
+            multiplayerEngine.createRoom('Test Room', 4, 'deathmatch');
+          }, 1000);
+        } else {
+          this.updateConnectionStatus('Connection Failed');
+        }
+      } else {
+        alert('Multiplayer not available in this build');
+      }
     });
 
     settingsBtn?.addEventListener('click', () => {
@@ -66,6 +99,26 @@ export class MainMenu {
         window.close(); // May not work in all browsers
       }
     });
+  }
+
+  private updateConnectionStatus(status: string): void {
+    const statusElement = this.container.querySelector('#connection-status') as HTMLDivElement;
+    const statusText = this.container.querySelector('#status-text') as HTMLSpanElement;
+
+    if (statusElement && statusText) {
+      statusElement.style.display = 'block';
+      statusText.textContent = status;
+
+      // Color coding
+      statusElement.className = 'multiplayer-status';
+      if (status.includes('Connected')) {
+        statusElement.classList.add('connected');
+      } else if (status.includes('Failed') || status.includes('Error')) {
+        statusElement.classList.add('error');
+      } else {
+        statusElement.classList.add('connecting');
+      }
+    }
   }
 
   public show(): void {
