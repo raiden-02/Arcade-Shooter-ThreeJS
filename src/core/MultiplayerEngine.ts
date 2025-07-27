@@ -14,10 +14,30 @@ import {
 } from './NetworkTypes';
 import { PlayerSync } from './PlayerSync';
 
+// Interface for other classes to use MultiplayerEngine without circular imports
+export interface IMultiplayerEngine {
+  isInMultiplayerMode(): boolean;
+  fireWeapon(
+    origin: { x: number; y: number; z: number },
+    direction: { x: number; y: number; z: number },
+    weaponType: string,
+  ): void;
+  damagePlayer(targetPlayerId: string, damage: number, weaponType: string): void;
+  getNetworkPlayers(): Map<
+    string,
+    {
+      getColliderHandle(): number;
+      takeDamage(amount: number): void;
+      getPlayerName(): string;
+      getPosition(): { x: number; y: number; z: number };
+    }
+  >;
+}
+
 /**
  * Extended Engine for multiplayer functionality
  */
-export class MultiplayerEngine extends Engine {
+export class MultiplayerEngine extends Engine implements IMultiplayerEngine {
   private networkManager: NetworkManager;
   private playerSync: PlayerSync;
   private isMultiplayer: boolean = false;
@@ -73,6 +93,17 @@ export class MultiplayerEngine extends Engine {
    */
   public getNetworkPlayers(): Map<string, NetworkPlayer> {
     return this.networkPlayers;
+  }
+
+  /**
+   * Check if this client is the host/server
+   */
+  public isHost(): boolean {
+    if (!this.isMultiplayer || !this.currentRoom) {
+      return true; // Single player mode
+    }
+
+    return this.currentRoom.hostId === this.localPlayer?.id;
   }
 
   /**
@@ -486,6 +517,16 @@ export class MultiplayerEngine extends Engine {
 
     // Disconnect from server
     this.networkManager.disconnect();
+  }
+
+  /**
+   * Damage a player (send to server for processing)
+   */
+  public damagePlayer(targetPlayerId: string, damage: number, weaponType: string): void {
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.networkManager.damagePlayer(targetPlayerId, damage, weaponType);
+      console.log(`Sent player damage: ${targetPlayerId} -= ${damage} from ${weaponType}`);
+    }
   }
 
   /**

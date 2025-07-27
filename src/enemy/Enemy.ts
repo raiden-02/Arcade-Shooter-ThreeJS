@@ -160,9 +160,17 @@ export class Enemy {
   /**
    * Get enemy ID for network synchronization
    */
+  private enemyId: string = `enemy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   public getId(): string {
-    // Generate a unique ID based on position and creation time
-    return `enemy_${this.mesh.position.x.toFixed(1)}_${this.mesh.position.y.toFixed(1)}_${this.mesh.position.z.toFixed(1)}_${Date.now()}`;
+    return this.enemyId;
+  }
+
+  /**
+   * Set enemy ID (for network synchronization)
+   */
+  public setId(id: string): void {
+    this.enemyId = id;
   }
 
   /**
@@ -278,7 +286,10 @@ export class Enemy {
   }
 
   die() {
+    if (this.isDead) return;
     this.isDead = true;
+
+    console.log(`Enemy ${this.enemyId} died!`);
 
     // Remove from scene
     this.mesh.geometry.dispose();
@@ -290,5 +301,38 @@ export class Enemy {
     // Remove kinematic controller and collider from physics world
     this.world.removeCharacterController(this.charController);
     this.world.removeCollider(this.collider, true);
+  }
+
+  /**
+   * Update visuals only (for clients in multiplayer)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public updateVisuals(_delta: number, _elapsedTime: number): void {
+    if (this.isDead) return;
+
+    // Only update visual elements, no AI logic
+    // Update health bar width
+    const healthPct = Math.max(this.health, 0) / 100;
+    this.uiElement.style.width = `${50 * healthPct}px`;
+
+    // Project mesh world position to normalized device coords
+    const screenPos = this.mesh.position.clone().project(this.camera);
+    // Hide if outside view frustum or behind camera
+    const offScreen =
+      screenPos.x < -1 ||
+      screenPos.x > 1 ||
+      screenPos.y < -1 ||
+      screenPos.y > 1 ||
+      screenPos.z < 0 ||
+      screenPos.z > 1;
+    if (offScreen) {
+      this.uiElement.style.display = 'none';
+    } else {
+      this.uiElement.style.display = 'block';
+      const x = ((screenPos.x + 1) / 2) * window.innerWidth;
+      const y = ((1 - screenPos.y) / 2) * window.innerHeight;
+      this.uiElement.style.left = `${x}px`;
+      this.uiElement.style.top = `${y}px`;
+    }
   }
 }

@@ -175,6 +175,24 @@ export abstract class Weapon {
   public getPixelsPerDeg(): number {
     return this.pixelsPerDeg;
   }
+
+  /** Check if weapon can fire at given time */
+  public canFire(time: number): boolean {
+    if (this.reloading) return false;
+    if (this.currentAmmo <= 0) return false;
+    const interval = 1 / this.options.fireRate;
+    return time - this.lastShotTime >= interval;
+  }
+
+  /** Get projectile speed for networking */
+  public getProjectileSpeed(): number {
+    return this.options.projectileSpeed;
+  }
+
+  /** Get damage per shot for networking */
+  public getDamage(): number {
+    return this.options.damage;
+  }
 }
 
 /** Assault Rifle: medium fire rate, moderate damage */

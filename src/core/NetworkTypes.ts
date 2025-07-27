@@ -12,6 +12,7 @@ export interface PlayerState {
 export interface RoomState {
   id: string;
   name: string;
+  hostId: string;
   players: PlayerState[];
   maxPlayers: number;
   gameMode: string;

@@ -10,6 +10,8 @@ import { Projectile } from './Projectile';
 
 // Interface to avoid circular import with MultiplayerEngine
 interface IMultiplayerEngine {
+  isInMultiplayerMode(): boolean;
+  damagePlayer(targetPlayerId: string, damage: number, weaponType: string): void;
   getNetworkPlayers(): Map<
     string,
     {
@@ -52,6 +54,37 @@ export class ProjectileManager {
    */
   public setMultiplayerEngine(engine: IMultiplayerEngine): void {
     this.multiplayerEngine = engine;
+  }
+
+  /**
+   * Create a remote projectile (from other players) for visual effects only
+   * These projectiles don't damage local entities but provide visual feedback
+   */
+  public createRemoteProjectile(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    speed: number,
+    damage: number,
+    playerId: string,
+    weaponType: string,
+  ): void {
+    console.log(`Creating remote projectile from player ${playerId} using ${weaponType}`);
+
+    // Create a visual-only projectile that doesn't interact with local entities
+    const projectile = new Projectile(
+      this.scene,
+      this.world,
+      origin,
+      direction,
+      speed,
+      0.02, // radius
+      0.1, // length
+      damage,
+      undefined, // no explosion radius
+      'enemy', // Set as enemy so it doesn't hit remote players
+    );
+
+    this.projectiles.push(projectile);
   }
   /**
    * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
@@ -149,13 +182,19 @@ export class ProjectileManager {
               } else if (this.multiplayerEngine) {
                 // Check for remote player hit
                 const remotePlayers = this.multiplayerEngine.getNetworkPlayers();
-                for (const [, networkPlayer] of remotePlayers) {
+                for (const [playerId, networkPlayer] of remotePlayers) {
                   if (networkPlayer.getColliderHandle() === other) {
+                    // Player-to-player damage!
                     networkPlayer.takeDamage(projectile.damage);
                     this.ui?.showHitMarker();
                     console.log(
-                      `Player projectile hit remote player: ${networkPlayer.getPlayerName()}`,
+                      `Local player damaged remote player ${networkPlayer.getPlayerName()} for ${projectile.damage} damage`,
                     );
+
+                    // Send damage event to server for validation and synchronization
+                    if (this.multiplayerEngine.isInMultiplayerMode()) {
+                      this.multiplayerEngine.damagePlayer(playerId, projectile.damage, 'unknown');
+                    }
                     break;
                   }
                 }

@@ -82,6 +82,14 @@ export interface ClientToServerEvents {
     direction: { x: number; y: number; z: number };
     weaponType: string;
   }) => void;
+
+  // Player damage events
+  'player:damage': (data: {
+    targetPlayerId: string;
+    damage: number;
+    attackerPlayerId: string;
+    weaponType: string;
+  }) => void;
 }
 
 export interface GameResults {

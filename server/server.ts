@@ -332,6 +332,76 @@ io.on('connection', socket => {
     console.log(`Player ${socket.data.playerId} fired ${weaponData.weaponType}`);
   });
 
+  // Handle player-to-player damage
+  socket.on('player:damage', damageData => {
+    if (!socket.data.roomId || !socket.data.playerState) return;
+
+    const { targetPlayerId, damage, attackerPlayerId, weaponType } = damageData;
+
+    // Validate that the attacker is the current player
+    if (attackerPlayerId !== socket.data.playerId) {
+      console.log(
+        `Invalid damage request: attacker ${attackerPlayerId} != current player ${socket.data.playerId}`,
+      );
+      return;
+    }
+
+    // Find the target player in the room
+    const roomPlayers = roomManager.getRoomPlayers(socket.data.roomId);
+    const targetPlayer = roomPlayers.find(p => p.id === targetPlayerId);
+
+    if (!targetPlayer) {
+      console.log(`Target player ${targetPlayerId} not found in room ${socket.data.roomId}`);
+      return;
+    }
+
+    // Apply damage to target player
+    const newHealth = Math.max(0, targetPlayer.health - damage);
+    const wasAlive = targetPlayer.isAlive;
+
+    // Update target player state
+    roomManager.updatePlayerInRoom(targetPlayerId, {
+      health: newHealth,
+      isAlive: newHealth > 0,
+    });
+
+    console.log(
+      `Player ${attackerPlayerId} damaged player ${targetPlayerId} for ${damage} damage (${targetPlayer.health} -> ${newHealth}) with ${weaponType}`,
+    );
+
+    // Broadcast damage event to all players in room
+    io.to(socket.data.roomId).emit('player:updated', {
+      id: targetPlayerId,
+      name: targetPlayer.name,
+      position: targetPlayer.position,
+      rotation: targetPlayer.rotation,
+      health: newHealth,
+      weapon: targetPlayer.weapon,
+      isAlive: newHealth > 0,
+    });
+
+    // If player died, handle death
+    if (wasAlive && newHealth <= 0) {
+      // Update kill/death stats
+      const attacker = roomPlayers.find(p => p.id === attackerPlayerId);
+      if (attacker) {
+        roomManager.updatePlayerInRoom(attackerPlayerId, {
+          kills: (attacker.kills || 0) + 1,
+        });
+      }
+
+      roomManager.updatePlayerInRoom(targetPlayerId, {
+        deaths: (targetPlayer.deaths || 0) + 1,
+      });
+
+      console.log(
+        `Player ${targetPlayerId} was killed by player ${attackerPlayerId} with ${weaponType}`,
+      );
+
+      // Could add special death handling later
+    }
+  });
+
   // Handle enemy damage
   socket.on('enemy:damage', enemyData => {
     if (!socket.data.roomId || !socket.data.playerState) return;
@@ -501,8 +571,8 @@ io.on('connection', socket => {
 // Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Multiplayer server running on port ${PORT}`);
-  console.log(`📡 WebSocket server ready for connections`);
-  console.log(`🎮 Game server initialized with room management`);
-  console.log(`⚙️  Max players per room: ${GAME_CONFIG.MAX_PLAYERS_PER_ROOM}`);
+  console.log(`Multiplayer server running on port ${PORT}`);
+  console.log(`WebSocket server ready for connections`);
+  console.log(`Game server initialized with room management`);
+  console.log(`Max players per room: ${GAME_CONFIG.MAX_PLAYERS_PER_ROOM}`);
 });

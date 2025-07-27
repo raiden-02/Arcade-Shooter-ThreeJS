@@ -206,6 +206,20 @@ export class NetworkManager {
   }
 
   /**
+   * Damage a player
+   */
+  public damagePlayer(targetPlayerId: string, damage: number, weaponType: string): void {
+    if (!this.isConnected() || !this.currentRoom || !this.playerId) return;
+
+    this.socket!.emit('player:damage', {
+      targetPlayerId,
+      damage,
+      attackerPlayerId: this.playerId,
+      weaponType,
+    });
+  }
+
+  /**
    * Damage an enemy
    */
   public damageEnemy(enemyId: string, damage: number): void {

@@ -210,10 +210,20 @@ export class DevLevel extends BaseScene {
     this.defaultFov = this.camera.fov;
     this.adsFov = initialOpts.adsFov ?? this.defaultFov * 0.75;
 
-    // Spawn placeholder enemies
-    this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
-    // this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
-    // this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
+    // Only spawn enemies in singleplayer or if we're the host in multiplayer
+    if (
+      !(this.engine instanceof MultiplayerEngine) ||
+      (this.engine instanceof MultiplayerEngine && this.engine.isHost())
+    ) {
+      // Spawn placeholder enemies
+      this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
+      // this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
+      // this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
+      console.log('Spawned local enemies (host or singleplayer)');
+    } else {
+      console.log('Joined player - waiting for enemies from server');
+    }
+
     // Update initial UI for weapon
     const initial = this.weaponManager.getCurrentWeapon();
     this.ui.updateWeaponInfo(initial.getName(), initial.getOptions());
@@ -358,9 +368,15 @@ export class DevLevel extends BaseScene {
         isAlive: boolean;
       }> = customEvent.detail;
 
-      console.log(`Creating ${enemies.length} enemies from server`);
+      console.log(`Receiving ${enemies.length} enemies from server - clearing local enemies first`);
 
-      // Create actual enemy objects in the game world
+      // Clear any existing local enemies to prevent duplication
+      this.enemyManager.enemies.forEach(enemy => {
+        enemy.die();
+      });
+      this.enemyManager.enemies.length = 0;
+
+      // Create actual enemy objects in the game world from server data
       enemies.forEach(enemyData => {
         if (!enemyData.isDead && enemyData.isAlive) {
           const position = new THREE.Vector3(
@@ -370,13 +386,11 @@ export class DevLevel extends BaseScene {
           );
           this.enemyManager.spawnEnemy(position);
           console.log(
-            `Created enemy at position: ${enemyData.position.x}, ${enemyData.position.y}, ${enemyData.position.z}`,
+            `Created enemy from server at position: ${enemyData.position.x}, ${enemyData.position.y}, ${enemyData.position.z}`,
           );
         }
       });
-    };
-
-    // Handler for enemy updates
+    }; // Handler for enemy updates
     this.enemyEventHandlers['enemy:updated'] = (event: Event) => {
       const customEvent = event as CustomEvent;
       const enemyData: {
