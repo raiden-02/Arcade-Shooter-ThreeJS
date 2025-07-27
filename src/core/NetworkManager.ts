@@ -21,6 +21,8 @@ export class NetworkManager {
   // Player data
   private playerId: string | null = null;
   private currentRoom: string | null = null;
+  private localPlayer: PlayerState | null = null;
+  private remotePlayers: Map<string, PlayerState> = new Map();
 
   constructor(private serverUrl: string = 'http://localhost:3000') {
     console.log(`NetworkManager initialized with server: ${this.serverUrl}`);
@@ -203,6 +205,43 @@ export class NetworkManager {
   }
 
   /**
+   * Get local player state
+   */
+  public getLocalPlayer(): PlayerState | null {
+    return this.localPlayer;
+  }
+
+  /**
+   * Set local player state
+   */
+  public setLocalPlayer(playerState: PlayerState): void {
+    this.localPlayer = playerState;
+  }
+
+  /**
+   * Get all remote players
+   */
+  public getRemotePlayers(): Map<string, PlayerState> {
+    return new Map(this.remotePlayers);
+  }
+
+  /**
+   * Add or update remote player
+   */
+  public updateRemotePlayer(playerState: PlayerState): void {
+    this.remotePlayers.set(playerState.id, playerState);
+    this.emit('player:updated', playerState);
+  }
+
+  /**
+   * Remove remote player
+   */
+  public removeRemotePlayer(playerId: string): void {
+    this.remotePlayers.delete(playerId);
+    this.emit('player:left', playerId);
+  }
+
+  /**
    * Add event listener
    */
   public on<K extends keyof NetworkEvents>(event: K, callback: NetworkEvents[K]): void {
@@ -255,16 +294,28 @@ export class NetworkManager {
       console.log('Player joined:', player.name);
       if (!this.playerId) {
         this.playerId = player.id;
+        this.localPlayer = player; // Set as local player if it's us
+      } else if (player.id !== this.playerId) {
+        // It's a remote player
+        this.remotePlayers.set(player.id, player);
       }
       this.emit('player:joined', player);
     });
 
     this.socket.on('player:left', (playerId: string) => {
       console.log('Player left:', playerId);
+      this.remotePlayers.delete(playerId);
       this.emit('player:left', playerId);
     });
 
     this.socket.on('player:updated', (player: PlayerState) => {
+      if (player.id === this.playerId) {
+        // Update local player state
+        this.localPlayer = player;
+      } else {
+        // Update remote player
+        this.remotePlayers.set(player.id, player);
+      }
       this.emit('player:updated', player);
     });
 

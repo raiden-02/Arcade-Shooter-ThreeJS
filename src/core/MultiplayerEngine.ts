@@ -1,6 +1,7 @@
 import { Engine } from './Engine';
 import { GameState } from './GameStateMachine';
 import { NetworkManager } from './NetworkManager';
+import { NetworkPlayer } from './NetworkPlayer';
 import {
   ConnectionState,
   PlayerState,
@@ -8,22 +9,28 @@ import {
   GameResults,
   WeaponFireData,
 } from './NetworkTypes';
+import { PlayerSync } from './PlayerSync';
 
 /**
  * Extended Engine for multiplayer functionality
  */
 export class MultiplayerEngine extends Engine {
   private networkManager: NetworkManager;
+  private playerSync: PlayerSync;
   private isMultiplayer: boolean = false;
   private localPlayer: PlayerState | null = null;
   private remotePlayers: Map<string, PlayerState> = new Map();
+  private networkPlayers: Map<string, NetworkPlayer> = new Map(); // Visual representations
   private currentRoom: RoomState | null = null;
+  private availableRooms: RoomState[] = []; // List of available rooms
+  private updateTimer: number = 0; // For controlling network update frequency
 
   constructor(container?: HTMLElement, serverUrl?: string) {
     super(container);
 
-    // Initialize network manager
+    // Initialize networking components
     this.networkManager = new NetworkManager(serverUrl);
+    this.playerSync = new PlayerSync(20); // 20Hz update rate
     this.setupNetworkEvents();
 
     console.log('MultiplayerEngine initialized');
@@ -65,6 +72,13 @@ export class MultiplayerEngine extends Engine {
   }
 
   /**
+   * Get available rooms list
+   */
+  public getAvailableRooms(): RoomState[] {
+    return this.availableRooms;
+  }
+
+  /**
    * Connect to multiplayer server
    */
   public async connectToServer(): Promise<boolean> {
@@ -74,6 +88,8 @@ export class MultiplayerEngine extends Engine {
 
       if (connected) {
         this.isMultiplayer = true;
+        // Transition back to MainMenu so we can then transition to Playing
+        this.stateMachine.transition(GameState.MainMenu);
         console.log('Successfully connected to multiplayer server');
         return true;
       } else {
@@ -288,6 +304,9 @@ export class MultiplayerEngine extends Engine {
     });
 
     this.networkManager.on('room:list', (rooms: RoomState[]) => {
+      // Update available rooms list
+      this.availableRooms = rooms;
+      console.log(`Received room list: ${rooms.length} rooms available`);
       // Emit custom event for UI to handle
       this.emitCustomEvent('rooms:updated', rooms);
     });
@@ -325,9 +344,111 @@ export class MultiplayerEngine extends Engine {
   }
 
   /**
-   * Cleanup network connections
+   * Update networking functionality (called from main update loop)
+   */
+  public updateNetworking(deltaTime: number): void {
+    // Update network timer
+    this.updateTimer += deltaTime;
+
+    // Handle network updates if we're in multiplayer mode
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.handleNetworkUpdates();
+    }
+  }
+
+  /**
+   * Handle network updates for player synchronization
+   */
+  private handleNetworkUpdates(): void {
+    // Clean up old snapshots
+    this.playerSync.cleanup();
+
+    // Send player updates if needed
+    if (this.playerSync.shouldSendUpdate()) {
+      this.sendPlayerUpdateIfPossible();
+    }
+
+    // Update remote player visualizations
+    this.updateRemotePlayerVisuals();
+  }
+
+  /**
+   * Send local player update to server if possible
+   */
+  private sendPlayerUpdateIfPossible(): void {
+    const playerId = this.networkManager.getPlayerId();
+    if (!playerId) return;
+
+    // For now, send a simple position update
+    // In a real implementation, this would get data from the actual player
+    const playerName = `Player_${playerId.slice(-4)}`;
+    const dummyState = {
+      id: playerId,
+      name: playerName,
+      position: { x: 0, y: 2, z: 0 }, // Default position
+      rotation: { x: 0, y: 0, z: 0 }, // Default rotation
+      health: 100,
+      weapon: 'assault_rifle',
+      isAlive: true,
+    };
+
+    this.networkManager.updatePlayerState(dummyState);
+  }
+
+  /**
+   * Update visual representations of remote players
+   */
+  private updateRemotePlayerVisuals(): void {
+    const remotePlayers = this.networkManager.getRemotePlayers();
+
+    // Update existing remote players
+    for (const [playerId, playerState] of remotePlayers) {
+      let networkPlayer = this.networkPlayers.get(playerId);
+
+      if (!networkPlayer) {
+        // Create new network player using the public scene
+        networkPlayer = new NetworkPlayer(playerId, playerState.name, this.scene);
+        this.networkPlayers.set(playerId, networkPlayer);
+        console.log(`Created visual representation for remote player: ${playerState.name}`);
+      }
+
+      if (networkPlayer) {
+        // Add state to sync for interpolation
+        this.playerSync.addRemotePlayerSnapshot(playerId, playerState);
+
+        // Get interpolated state
+        const interpolatedState = this.playerSync.getInterpolatedState(playerId);
+        if (interpolatedState) {
+          networkPlayer.updateState(interpolatedState);
+        }
+
+        // Update name tag to face camera
+        networkPlayer.updateNameTag(this.camera);
+      }
+    }
+
+    // Clean up disconnected players
+    for (const [playerId, networkPlayer] of this.networkPlayers) {
+      if (!remotePlayers.has(playerId)) {
+        networkPlayer.dispose();
+        this.networkPlayers.delete(playerId);
+        this.playerSync.removePlayer(playerId);
+        console.log(`Removed visual representation for disconnected player: ${playerId}`);
+      }
+    }
+  }
+
+  /**
+   * Cleanup network connections and visual players
    */
   public cleanup(): void {
+    // Clean up all network player visuals
+    for (const [, networkPlayer] of this.networkPlayers) {
+      networkPlayer.dispose();
+    }
+    this.networkPlayers.clear();
+
+    // Disconnect from server
     this.networkManager.disconnect();
   }
 }

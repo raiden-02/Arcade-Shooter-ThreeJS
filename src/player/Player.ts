@@ -205,4 +205,116 @@ export class Player {
   public getRespawnTime(): number {
     return Math.max(0, this.respawnTimer);
   }
+
+  // === NETWORKING METHODS FOR MULTIPLAYER ===
+
+  /**
+   * Get player position for network synchronization
+   */
+  public getPosition(): { x: number; y: number; z: number } {
+    const translation = this.collider.translation();
+    return {
+      x: translation.x,
+      y: translation.y,
+      z: translation.z,
+    };
+  }
+
+  /**
+   * Get player rotation for network synchronization
+   */
+  public getRotation(): { x: number; y: number; z: number } {
+    return {
+      x: this.cameraRig.object.rotation.x,
+      y: this.cameraRig.object.rotation.y,
+      z: this.cameraRig.object.rotation.z,
+    };
+  }
+
+  /**
+   * Get current weapon name for network synchronization
+   */
+  public getCurrentWeapon(): string {
+    // TODO: This should return the actual current weapon from WeaponManager
+    // For now return a placeholder
+    return 'assault_rifle';
+  }
+
+  /**
+   * Get network state for synchronization
+   */
+  public getNetworkState(
+    playerId: string,
+    playerName: string,
+  ): {
+    id: string;
+    name: string;
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+    health: number;
+    weapon: string;
+    isAlive: boolean;
+  } {
+    return {
+      id: playerId,
+      name: playerName,
+      position: this.getPosition(),
+      rotation: this.getRotation(),
+      health: this.health,
+      weapon: this.getCurrentWeapon(),
+      isAlive: !this.isDead,
+    };
+  }
+
+  /**
+   * Apply network state from remote player (not used for local player)
+   */
+  public applyNetworkState(state: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+    health: number;
+    isAlive: boolean;
+  }): void {
+    // This method would be used for remote players if we were updating them
+    // For now, NetworkPlayer handles remote player visualization
+    // This is here for future use if needed
+    console.log('applyNetworkState called (not implemented for local player)', state);
+  }
+
+  /**
+   * Check if player has moved significantly (for network optimization)
+   */
+  private lastNetworkPosition: { x: number; y: number; z: number } | null = null;
+  private lastNetworkRotation: { x: number; y: number; z: number } | null = null;
+
+  public hasSignificantMovement(threshold: number = 0.1): boolean {
+    const currentPos = this.getPosition();
+    const currentRot = this.getRotation();
+
+    if (!this.lastNetworkPosition || !this.lastNetworkRotation) {
+      this.lastNetworkPosition = currentPos;
+      this.lastNetworkRotation = currentRot;
+      return true;
+    }
+
+    const posDistance = Math.sqrt(
+      Math.pow(currentPos.x - this.lastNetworkPosition.x, 2) +
+        Math.pow(currentPos.y - this.lastNetworkPosition.y, 2) +
+        Math.pow(currentPos.z - this.lastNetworkPosition.z, 2),
+    );
+
+    const rotDistance = Math.sqrt(
+      Math.pow(currentRot.x - this.lastNetworkRotation.x, 2) +
+        Math.pow(currentRot.y - this.lastNetworkRotation.y, 2) +
+        Math.pow(currentRot.z - this.lastNetworkRotation.z, 2),
+    );
+
+    if (posDistance > threshold || rotDistance > 0.05) {
+      this.lastNetworkPosition = currentPos;
+      this.lastNetworkRotation = currentRot;
+      return true;
+    }
+
+    return false;
+  }
 }

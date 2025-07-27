@@ -20,15 +20,19 @@ console.log('Press F12 to toggle network debug UI');
 const level = new DevLevel(engine);
 // When entering Playing state from Boot, MainMenu, or Lobby, load the scene
 fsm.onStateChange((prev, next) => {
+  console.log(`Game state changed: ${prev} -> ${next}`);
+
   if (
     next === GameState.Playing &&
-    (prev === GameState.Boot || prev === GameState.MainMenu || prev === GameState.Lobby)
+    (prev === GameState.Boot ||
+      prev === GameState.MainMenu ||
+      prev === GameState.Lobby ||
+      prev === GameState.Connecting)
   ) {
+    console.log('State transition condition met, loading DevLevel...');
     engine.changeScene(level);
+    console.log('DevLevel loaded for multiplayer');
   }
-
-  // Log state changes for debugging
-  console.log(`Game state changed: ${prev} -> ${next}`);
 });
 
 // Start the engine loop

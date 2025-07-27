@@ -33,6 +33,12 @@ export class Engine {
   // Global state machine for game states (Boot → MainMenu → Playing → Paused → GameOver)
   public stateMachine: GameStateMachine;
 
+  // Optional networking update method (implemented by MultiplayerEngine)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public updateNetworking(_delta: number): void {
+    // Base implementation does nothing - overridden in MultiplayerEngine
+  }
+
   constructor(container?: HTMLElement) {
     // Settings service (load persisted settings)
     this.settingsService = new SettingsService();
@@ -161,6 +167,10 @@ export class Engine {
     }
     // Update Yuka AI entities
     this.entityManager.update(delta);
+
+    // Update networking (overridden in MultiplayerEngine)
+    this.updateNetworking(delta);
+
     this.renderer.render(this.scene, this.camera);
   };
 

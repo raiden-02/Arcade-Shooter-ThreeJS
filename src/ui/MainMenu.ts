@@ -71,9 +71,73 @@ export class MainMenu {
           // Join as player with default name
           multiplayerEngine.joinAsPlayer('Player_' + Date.now().toString().slice(-4));
 
-          // For testing, automatically create a room
-          setTimeout(() => {
-            multiplayerEngine.createRoom('Test Room', 4, 'deathmatch');
+          // First try to join existing rooms, if none exist, create one
+          setTimeout(async () => {
+            console.log('Looking for existing rooms...');
+
+            // Set up one-time listener for room list response
+            const handleRoomList = () => {
+              const availableRooms = multiplayerEngine.getAvailableRooms();
+              console.log('Received room list, total rooms:', availableRooms.length);
+
+              // Filter for joinable rooms (not full and not active)
+              const joinableRooms = availableRooms.filter(
+                room => room.players.length < room.maxPlayers && !room.isActive,
+              );
+              console.log('Joinable rooms:', joinableRooms.length);
+
+              if (joinableRooms.length > 0) {
+                // Join the first available room
+                const roomToJoin = joinableRooms[0];
+                console.log(
+                  'Joining existing room:',
+                  roomToJoin.name,
+                  `(${roomToJoin.players.length}/${roomToJoin.maxPlayers})`,
+                );
+                multiplayerEngine.joinRoom(roomToJoin.id);
+              } else {
+                // No rooms available, create a new one
+                console.log('No joinable rooms found, creating new room...');
+                multiplayerEngine.createRoom('Test Room', 4, 'deathmatch');
+              }
+
+              // Transition to Playing state to load the level
+              console.log('Multiplayer setup complete - transitioning to Playing state');
+              console.log(
+                'Current game state before transition:',
+                this.engine.stateMachine.getState(),
+              );
+              this.engine.stateMachine.transition(GameState.Playing);
+              console.log(
+                'Current game state after transition:',
+                this.engine.stateMachine.getState(),
+              );
+            };
+
+            // Listen for room list update (this will be triggered by the room list response)
+            const networkManager = multiplayerEngine.getNetworkManager();
+
+            const handleRoomListOnce = () => {
+              // Remove the listener to make it a "once" behavior
+              networkManager.off('room:list', handleRoomListOnce);
+              handleRoomList();
+            };
+
+            networkManager.on('room:list', handleRoomListOnce);
+
+            // Request room list
+            multiplayerEngine.requestRoomList();
+
+            // Backup timeout in case room list response never comes
+            setTimeout(() => {
+              networkManager.off('room:list', handleRoomListOnce);
+              console.log('Room list request timed out, creating new room...');
+              multiplayerEngine.createRoom('Test Room', 4, 'deathmatch');
+
+              // Transition to Playing state
+              console.log('Multiplayer setup complete (timeout) - transitioning to Playing state');
+              this.engine.stateMachine.transition(GameState.Playing);
+            }, 2000); // Increased timeout to 2 seconds
           }, 1000);
         } else {
           this.updateConnectionStatus('Connection Failed');
