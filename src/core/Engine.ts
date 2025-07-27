@@ -113,15 +113,25 @@ export class Engine {
     // Handle resize
     window.addEventListener('resize', () => this.onWindowResize());
 
-    // Pause when pointer lock is lost
+    // Pause when pointer lock is lost (disabled in multiplayer)
     document.addEventListener('pointerlockchange', () => {
+      // Don't pause in multiplayer mode
+      if (this.isInMultiplayerMode && this.isInMultiplayerMode()) {
+        return;
+      }
+
       if (document.pointerLockElement !== this.renderer.domElement) {
         this.stateMachine.transition(GameState.Paused);
       }
     });
-    // Escape toggles between playing and paused
+    // Escape toggles between playing and paused (disabled in multiplayer)
     document.addEventListener('keydown', e => {
       if (e.code === 'Escape') {
+        // Don't pause in multiplayer mode
+        if (this.isInMultiplayerMode && this.isInMultiplayerMode()) {
+          return;
+        }
+
         if (this.stateMachine.getState() !== GameState.Paused) {
           document.exitPointerLock();
         } else {
@@ -133,6 +143,13 @@ export class Engine {
     document.addEventListener('unpause', () => {
       this.stateMachine.transition(GameState.Playing);
     });
+  }
+
+  /**
+   * Check if currently in multiplayer mode (overridden in MultiplayerEngine)
+   */
+  public isInMultiplayerMode(): boolean {
+    return false;
   }
 
   /**

@@ -155,6 +155,128 @@ export class Enemy {
     }
   }
 
+  // === NETWORKING METHODS FOR MULTIPLAYER ===
+
+  /**
+   * Get enemy ID for network synchronization
+   */
+  public getId(): string {
+    // Generate a unique ID based on position and creation time
+    return `enemy_${this.mesh.position.x.toFixed(1)}_${this.mesh.position.y.toFixed(1)}_${this.mesh.position.z.toFixed(1)}_${Date.now()}`;
+  }
+
+  /**
+   * Get enemy position for network synchronization
+   */
+  public getPosition(): { x: number; y: number; z: number } {
+    const translation = this.collider.translation();
+    return {
+      x: translation.x,
+      y: translation.y,
+      z: translation.z,
+    };
+  }
+
+  /**
+   * Get enemy rotation for network synchronization
+   */
+  public getRotation(): { x: number; y: number; z: number; w: number } {
+    const rotation = this.collider.rotation();
+    return {
+      x: rotation.x,
+      y: rotation.y,
+      z: rotation.z,
+      w: rotation.w,
+    };
+  }
+
+  /**
+   * Get enemy network state for synchronization
+   */
+  public getNetworkState(enemyId?: string): {
+    id: string;
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number; w: number };
+    health: number;
+    isDead: boolean;
+    isAlive: boolean;
+  } {
+    return {
+      id: enemyId || this.getId(),
+      position: this.getPosition(),
+      rotation: this.getRotation(),
+      health: this.health,
+      isDead: this.isDead,
+      isAlive: !this.isDead,
+    };
+  }
+
+  /**
+   * Apply network state from server (for client synchronization)
+   */
+  public applyNetworkState(state: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number; w: number };
+    health: number;
+    isDead: boolean;
+  }): void {
+    // Update position
+    const newPosition = new RAPIER.Vector3(state.position.x, state.position.y, state.position.z);
+    this.collider.setTranslation(newPosition);
+
+    // Update rotation
+    const newRotation = new RAPIER.Quaternion(
+      state.rotation.x,
+      state.rotation.y,
+      state.rotation.z,
+      state.rotation.w,
+    );
+    this.collider.setRotation(newRotation);
+
+    // Update health and death state
+    this.health = state.health;
+    this.isDead = state.isDead;
+
+    // Update visual state
+    if (this.isDead && !this.mesh.userData.wasDeadBefore) {
+      this.mesh.material = new THREE.MeshBasicMaterial({ color: 0x666666 }); // Gray out dead enemies
+      this.mesh.userData.wasDeadBefore = true;
+    }
+  }
+
+  /**
+   * Check if enemy has moved significantly (for network optimization)
+   */
+  private lastNetworkPosition: { x: number; y: number; z: number } | null = null;
+  private lastNetworkHealth: number | null = null;
+
+  public hasSignificantChange(threshold: number = 0.5): boolean {
+    const currentPos = this.getPosition();
+    const currentHealth = this.health;
+
+    if (!this.lastNetworkPosition || this.lastNetworkHealth === null) {
+      this.lastNetworkPosition = currentPos;
+      this.lastNetworkHealth = currentHealth;
+      return true;
+    }
+
+    const posDistance = Math.sqrt(
+      Math.pow(currentPos.x - this.lastNetworkPosition.x, 2) +
+        Math.pow(currentPos.y - this.lastNetworkPosition.y, 2) +
+        Math.pow(currentPos.z - this.lastNetworkPosition.z, 2),
+    );
+
+    const healthChanged = Math.abs(currentHealth - this.lastNetworkHealth) > 0.1;
+
+    if (posDistance > threshold || healthChanged || this.isDead) {
+      this.lastNetworkPosition = currentPos;
+      this.lastNetworkHealth = currentHealth;
+      return true;
+    }
+
+    return false;
+  }
+
   die() {
     this.isDead = true;
 

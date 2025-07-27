@@ -8,6 +8,7 @@ import {
   ConnectionState,
   PlayerState,
   RoomState,
+  EnemyState,
   GameResults,
   WeaponFireData,
 } from './NetworkTypes';
@@ -339,6 +340,22 @@ export class MultiplayerEngine extends Engine {
       this.emitCustomEvent('weapon:fire:remote', data);
     });
 
+    // Enemy events
+    this.networkManager.on('enemies:spawned', (enemies: EnemyState[]) => {
+      console.log('Enemies spawned:', enemies.length);
+      this.emitCustomEvent('enemies:spawned', enemies);
+    });
+
+    this.networkManager.on('enemy:updated', (enemy: EnemyState) => {
+      console.log('Enemy updated:', enemy.id);
+      this.emitCustomEvent('enemy:updated', enemy);
+    });
+
+    this.networkManager.on('enemy:died', (enemyId: string) => {
+      console.log('Enemy died:', enemyId);
+      this.emitCustomEvent('enemy:died', enemyId);
+    });
+
     // Error handling
     this.networkManager.on('error', (message: string) => {
       console.error('Network error:', message);
@@ -457,5 +474,45 @@ export class MultiplayerEngine extends Engine {
 
     // Disconnect from server
     this.networkManager.disconnect();
+  }
+
+  /**
+   * Damage an enemy (send to server for processing)
+   */
+  public damageEnemy(enemyId: string, damage: number): void {
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.networkManager.damageEnemy(enemyId, damage);
+      console.log(`Sent enemy damage: ${enemyId} -= ${damage}`);
+    }
+  }
+
+  /**
+   * Kill an enemy directly (send to server for processing)
+   */
+  public killEnemy(enemyId: string): void {
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.networkManager.killEnemy(enemyId);
+      console.log(`Sent enemy kill: ${enemyId}`);
+    }
+  }
+
+  /**
+   * Spawn an enemy manually (host only)
+   */
+  public spawnEnemy(position?: { x: number; y: number; z: number }): void {
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.networkManager.spawnEnemy(position);
+      console.log(`Sent enemy spawn request at position:`, position);
+    }
+  }
+
+  /**
+   * Clear all enemies (host only)
+   */
+  public clearEnemies(): void {
+    if (this.isMultiplayer && this.networkManager.isConnected()) {
+      this.networkManager.clearEnemies();
+      console.log(`Sent clear enemies request`);
+    }
   }
 }

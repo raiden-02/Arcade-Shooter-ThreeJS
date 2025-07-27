@@ -5,6 +5,7 @@ import { GameState, GameStateMachine } from './core/GameStateMachine';
 import { MultiplayerEngine } from './core/MultiplayerEngine';
 import { DevLevel } from './levels/DevLevel';
 import { NetworkDebugUI } from './ui/NetworkDebugUI';
+import { SessionInfoPanel } from './ui/SessionInfoPanel';
 
 // Initialize multiplayer engine
 const engine = new MultiplayerEngine();
@@ -15,6 +16,11 @@ const fsm: GameStateMachine = engine.stateMachine;
 const debugUI = new NetworkDebugUI(engine);
 void debugUI; // Suppress unused variable warning - debugUI sets up its own event listeners
 console.log('Press F12 to toggle network debug UI');
+
+// Initialize session info panel for in-game session management
+const sessionInfoPanel = new SessionInfoPanel(engine);
+void sessionInfoPanel; // Suppress unused variable warning - sessionInfoPanel sets up its own event listeners
+console.log('Press F11 to toggle session info panel during gameplay');
 
 // Prepare playing scene
 const level = new DevLevel(engine);

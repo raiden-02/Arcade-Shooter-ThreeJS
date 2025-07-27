@@ -13,10 +13,20 @@ export interface RoomState {
   id: string;
   name: string;
   players: PlayerState[];
+  enemies?: EnemyState[]; // Add enemies to room state
   maxPlayers: number;
   gameMode: string;
   isActive: boolean;
   createdAt: number;
+}
+
+export interface EnemyState {
+  id: string;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number; w: number };
+  health: number;
+  isDead: boolean;
+  isAlive: boolean;
 }
 
 // Socket event types
@@ -32,6 +42,13 @@ export interface ServerToClientEvents {
   'room:left': () => void;
   'room:updated': (room: RoomState) => void;
   'room:list': (rooms: RoomState[]) => void;
+
+  // Enemy events
+  'enemy:spawned': (enemy: EnemyState) => void;
+  'enemy:updated': (enemy: EnemyState) => void;
+  'enemy:died': (enemyId: string) => void;
+  'enemies:spawned': (enemies: EnemyState[]) => void;
+  'enemies:sync': (enemies: EnemyState[]) => void;
 
   // Game events
   'game:start': () => void;
@@ -52,6 +69,12 @@ export interface ClientToServerEvents {
   'room:join': (roomId: string) => void;
   'room:leave': () => void;
   'room:list': () => void;
+
+  // Enemy events (for host/server interaction)
+  'enemy:damage': (data: { enemyId: string; damage: number; playerId: string }) => void;
+  'enemy:kill': (data: { enemyId: string; playerId: string }) => void;
+  'enemy:spawn': (data: { position?: { x: number; y: number; z: number } }) => void;
+  'enemies:clear': () => void;
 
   // Game events
   'weapon:fire': (weaponData: {

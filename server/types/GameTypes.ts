@@ -21,6 +21,7 @@ export interface GameRoom {
   gameMode: GameMode;
   gameState: GameState;
   players: Map<string, GamePlayer>;
+  enemies: Map<string, GameEnemy>;
   createdAt: number;
   hostId: string;
 }
@@ -55,10 +56,34 @@ export interface WeaponFireData {
   timestamp: number;
 }
 
+export interface GameEnemy {
+  id: string;
+  position: Vector3;
+  rotation: { x: number; y: number; z: number; w: number };
+  health: number;
+  maxHealth: number;
+  isDead: boolean;
+  isAlive: boolean;
+  createdAt: number;
+  lastUpdated: number;
+}
+
+export interface EnemyState {
+  id: string;
+  position: Vector3;
+  rotation: { x: number; y: number; z: number; w: number };
+  health: number;
+  isDead: boolean;
+  isAlive: boolean;
+}
+
 export const GAME_CONFIG = {
   MAX_PLAYERS_PER_ROOM: 8,
   MIN_PLAYERS_TO_START: 2,
   ROOM_CLEANUP_INTERVAL: 60000, // 1 minute
   PLAYER_UPDATE_RATE: 60, // Updates per second
   DEFAULT_PLAYER_HEALTH: 100,
+  DEFAULT_ENEMY_HEALTH: 100,
+  MAX_ENEMIES_PER_ROOM: 10,
+  ENEMY_UPDATE_RATE: 10, // Updates per second (lower than players for performance)
 } as const;

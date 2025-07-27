@@ -7,7 +7,7 @@ import express from 'express';
 import { Server } from 'socket.io';
 
 import { RoomManager } from './services/RoomManager.js';
-import { GamePlayer, GAME_CONFIG } from './types/GameTypes.js';
+import { GamePlayer, GameEnemy, GAME_CONFIG } from './types/GameTypes.js';
 import {
   ServerToClientEvents,
   ClientToServerEvents,
@@ -37,6 +37,43 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEve
 
 // Initialize room manager
 const roomManager = new RoomManager();
+
+// Enemy spawning utility
+function spawnEnemiesForRoom(roomId: string, count: number = 3): GameEnemy[] {
+  const enemies: GameEnemy[] = [];
+  const spawnPositions = [
+    { x: 10, y: 0, z: 10 },
+    { x: -10, y: 0, z: 10 },
+    { x: 0, y: 0, z: -10 },
+    { x: 15, y: 0, z: -5 },
+    { x: -15, y: 0, z: -5 },
+  ];
+
+  for (let i = 0; i < Math.min(count, spawnPositions.length); i++) {
+    const enemyId = `enemy_${roomId}_${Date.now()}_${i}`;
+    const position = spawnPositions[i];
+
+    const enemy: GameEnemy = {
+      id: enemyId,
+      position,
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+      health: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+      maxHealth: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+      isDead: false,
+      isAlive: true,
+      createdAt: Date.now(),
+      lastUpdated: Date.now(),
+    };
+
+    // Add enemy to room
+    if (roomManager.addEnemyToRoom(roomId, enemy)) {
+      enemies.push(enemy);
+      console.log(`Spawned enemy ${enemyId} at position`, position);
+    }
+  }
+
+  return enemies;
+}
 
 // Middleware
 app.use(cors());
@@ -149,6 +186,9 @@ io.on('connection', socket => {
       const joined = roomManager.joinRoom(room.id, gamePlayer);
 
       if (joined) {
+        // Spawn enemies for the new room
+        const spawnedEnemies = spawnEnemiesForRoom(room.id, 3);
+
         socket.emit('room:created', {
           id: room.id,
           name: room.name,
@@ -158,6 +198,22 @@ io.on('connection', socket => {
           isActive: false,
           createdAt: room.createdAt,
         });
+
+        // Broadcast spawned enemies to all players in the room
+        if (spawnedEnemies.length > 0) {
+          io.to(room.id).emit(
+            'enemies:spawned',
+            spawnedEnemies.map(enemy => ({
+              id: enemy.id,
+              position: enemy.position,
+              rotation: enemy.rotation,
+              health: enemy.health,
+              isDead: enemy.isDead,
+              isAlive: enemy.isAlive,
+            })),
+          );
+          console.log(`Broadcasted ${spawnedEnemies.length} spawned enemies to room ${room.id}`);
+        }
 
         console.log(`Player ${socket.data.playerId} created and joined room ${room.id}`);
       } else {
@@ -202,6 +258,22 @@ io.on('connection', socket => {
           isActive: room.gameState === 'active',
           createdAt: room.createdAt,
         });
+
+        // Send existing enemies to the newly joined player
+        const existingEnemies = roomManager.getRoomEnemies(roomId);
+        if (existingEnemies.length > 0) {
+          socket.emit(
+            'enemies:spawned',
+            existingEnemies.map(enemy => ({
+              id: enemy.id,
+              position: enemy.position,
+              rotation: enemy.rotation,
+              health: enemy.health,
+              isDead: enemy.isDead,
+              isAlive: enemy.isAlive,
+            })),
+          );
+        }
 
         // Notify other players in room
         socket.to(roomId).emit('player:joined', {
@@ -258,6 +330,158 @@ io.on('connection', socket => {
     });
 
     console.log(`Player ${socket.data.playerId} fired ${weaponData.weaponType}`);
+  });
+
+  // Handle enemy damage
+  socket.on('enemy:damage', enemyData => {
+    if (!socket.data.roomId || !socket.data.playerState) return;
+
+    const { enemyId, damage, playerId } = enemyData;
+
+    // Get the enemy from room
+    const enemy = roomManager.getRoomEnemy(socket.data.roomId, enemyId);
+    if (!enemy) {
+      console.log(`Enemy ${enemyId} not found in room ${socket.data.roomId}`);
+      return;
+    }
+
+    // Apply damage
+    const newHealth = Math.max(0, enemy.health - damage);
+    const wasAlive = enemy.isAlive;
+
+    // Update enemy state
+    roomManager.updateEnemyInRoom(socket.data.roomId, enemyId, {
+      health: newHealth,
+      isDead: newHealth <= 0,
+      isAlive: newHealth > 0,
+    });
+
+    console.log(
+      `Player ${playerId} damaged enemy ${enemyId} for ${damage} damage (${enemy.health} -> ${newHealth})`,
+    );
+
+    // Broadcast enemy update to all players in room
+    const updatedEnemy = roomManager.getRoomEnemy(socket.data.roomId, enemyId);
+    if (updatedEnemy) {
+      io.to(socket.data.roomId).emit('enemy:updated', {
+        id: updatedEnemy.id,
+        position: updatedEnemy.position,
+        rotation: updatedEnemy.rotation,
+        health: updatedEnemy.health,
+        isDead: updatedEnemy.isDead,
+        isAlive: updatedEnemy.isAlive,
+      });
+
+      // If enemy died, broadcast death event
+      if (wasAlive && updatedEnemy.isDead) {
+        io.to(socket.data.roomId).emit('enemy:died', enemyId);
+        console.log(`Enemy ${enemyId} was killed by player ${playerId}`);
+      }
+    }
+  });
+
+  // Handle enemy kill (direct kill without damage calculation)
+  socket.on('enemy:kill', enemyData => {
+    if (!socket.data.roomId || !socket.data.playerState) return;
+
+    const { enemyId, playerId } = enemyData;
+
+    // Update enemy to dead state
+    const updated = roomManager.updateEnemyInRoom(socket.data.roomId, enemyId, {
+      health: 0,
+      isDead: true,
+      isAlive: false,
+    });
+
+    if (updated) {
+      // Broadcast enemy death to all players in room
+      io.to(socket.data.roomId).emit('enemy:died', enemyId);
+      console.log(`Enemy ${enemyId} was killed by player ${playerId}`);
+
+      // Also send updated state
+      const updatedEnemy = roomManager.getRoomEnemy(socket.data.roomId, enemyId);
+      if (updatedEnemy) {
+        io.to(socket.data.roomId).emit('enemy:updated', {
+          id: updatedEnemy.id,
+          position: updatedEnemy.position,
+          rotation: updatedEnemy.rotation,
+          health: updatedEnemy.health,
+          isDead: updatedEnemy.isDead,
+          isAlive: updatedEnemy.isAlive,
+        });
+      }
+    }
+  });
+
+  // Handle manual enemy spawning (host only)
+  socket.on('enemy:spawn', (spawnData: { position?: { x: number; y: number; z: number } }) => {
+    if (!socket.data.roomId || !socket.data.playerState) return;
+
+    const room = roomManager.getRoom(socket.data.roomId);
+    if (!room || room.hostId !== socket.data.playerId) {
+      socket.emit('error', 'Only room host can spawn enemies');
+      return;
+    }
+
+    const { position } = spawnData;
+    const enemyId = `enemy_${socket.data.roomId}_${Date.now()}_manual`;
+
+    const enemy: GameEnemy = {
+      id: enemyId,
+      position: position || { x: Math.random() * 20 - 10, y: 0, z: Math.random() * 20 - 10 },
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+      health: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+      maxHealth: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+      isDead: false,
+      isAlive: true,
+      createdAt: Date.now(),
+      lastUpdated: Date.now(),
+    };
+
+    // Add enemy to room
+    if (roomManager.addEnemyToRoom(socket.data.roomId, enemy)) {
+      // Broadcast spawned enemy to all players in the room
+      io.to(socket.data.roomId).emit('enemies:spawned', [
+        {
+          id: enemy.id,
+          position: enemy.position,
+          rotation: enemy.rotation,
+          health: enemy.health,
+          isDead: enemy.isDead,
+          isAlive: enemy.isAlive,
+        },
+      ]);
+
+      console.log(`Host ${socket.data.playerId} manually spawned enemy ${enemyId}`);
+    }
+  });
+
+  // Handle clearing all enemies (host only)
+  socket.on('enemies:clear', () => {
+    if (!socket.data.roomId || !socket.data.playerState) return;
+
+    const room = roomManager.getRoom(socket.data.roomId);
+    if (!room || room.hostId !== socket.data.playerId) {
+      socket.emit('error', 'Only room host can clear enemies');
+      return;
+    }
+
+    // Get all enemy IDs before clearing
+    const enemyIds = roomManager.getRoomEnemies(socket.data.roomId).map(enemy => enemy.id);
+
+    // Clear all enemies from room
+    enemyIds.forEach(enemyId => {
+      roomManager.removeEnemyFromRoom(socket.data.roomId!, enemyId);
+    });
+
+    // Broadcast enemy deaths to all players
+    enemyIds.forEach(enemyId => {
+      io.to(socket.data.roomId!).emit('enemy:died', enemyId);
+    });
+
+    console.log(
+      `Host ${socket.data.playerId} cleared ${enemyIds.length} enemies from room ${socket.data.roomId}`,
+    );
   });
 
   // Handle disconnection

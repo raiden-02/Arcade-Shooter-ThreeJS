@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import {
   PlayerState,
   RoomState,
+  EnemyState,
   ConnectionState,
   NetworkEvents,
   WeaponFireData,
@@ -205,6 +206,42 @@ export class NetworkManager {
   }
 
   /**
+   * Damage an enemy
+   */
+  public damageEnemy(enemyId: string, damage: number): void {
+    if (!this.isConnected() || !this.currentRoom) return;
+
+    this.socket!.emit('enemy:damage', { enemyId, damage });
+  }
+
+  /**
+   * Kill an enemy
+   */
+  public killEnemy(enemyId: string): void {
+    if (!this.isConnected() || !this.currentRoom) return;
+
+    this.socket!.emit('enemy:kill', { enemyId });
+  }
+
+  /**
+   * Spawn an enemy (host only)
+   */
+  public spawnEnemy(position?: { x: number; y: number; z: number }): void {
+    if (!this.isConnected() || !this.currentRoom) return;
+
+    this.socket!.emit('enemy:spawn', { position });
+  }
+
+  /**
+   * Clear all enemies (host only)
+   */
+  public clearEnemies(): void {
+    if (!this.isConnected() || !this.currentRoom) return;
+
+    this.socket!.emit('enemies:clear');
+  }
+
+  /**
    * Get local player state
    */
   public getLocalPlayer(): PlayerState | null {
@@ -359,6 +396,19 @@ export class NetworkManager {
 
     this.socket.on('weapon:fire', (data: WeaponFireData) => {
       this.emit('weapon:fire', data);
+    });
+
+    // Enemy events
+    this.socket.on('enemies:spawned', (enemies: EnemyState[]) => {
+      this.emit('enemies:spawned', enemies);
+    });
+
+    this.socket.on('enemy:updated', (enemy: EnemyState) => {
+      this.emit('enemy:updated', enemy);
+    });
+
+    this.socket.on('enemy:died', (enemyId: string) => {
+      this.emit('enemy:died', enemyId);
     });
 
     // Error handling

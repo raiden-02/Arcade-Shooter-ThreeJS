@@ -1,5 +1,12 @@
-import { GameRoom, GamePlayer, GameMode, GameState, GAME_CONFIG } from '../types/GameTypes.js';
-import { RoomState, PlayerState } from '../types/NetworkTypes.js';
+import {
+  GameRoom,
+  GamePlayer,
+  GameEnemy,
+  GameMode,
+  GameState,
+  GAME_CONFIG,
+} from '../types/GameTypes.js';
+import { RoomState, PlayerState, EnemyState } from '../types/NetworkTypes.js';
 
 export class RoomManager {
   private rooms = new Map<string, GameRoom>();
@@ -28,6 +35,7 @@ export class RoomManager {
       gameMode: roomData.gameMode as GameMode,
       gameState: GameState.WAITING,
       players: new Map(),
+      enemies: new Map(), // Initialize enemies Map
       createdAt: Date.now(),
       hostId: hostPlayerId,
     };
@@ -151,6 +159,110 @@ export class RoomManager {
       .map(player => this.playerToPlayerState(player));
   }
 
+  // === ENEMY MANAGEMENT ===
+
+  /**
+   * Add enemy to room
+   */
+  addEnemyToRoom(roomId: string, enemy: GameEnemy): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+
+    if (room.enemies.size >= GAME_CONFIG.MAX_ENEMIES_PER_ROOM) {
+      console.log(`Room ${roomId} has reached maximum enemy limit`);
+      return false;
+    }
+
+    room.enemies.set(enemy.id, enemy);
+    console.log(`Enemy ${enemy.id} added to room ${roomId}`);
+    return true;
+  }
+
+  /**
+   * Remove enemy from room
+   */
+  removeEnemyFromRoom(roomId: string, enemyId: string): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+
+    const removed = room.enemies.delete(enemyId);
+    if (removed) {
+      console.log(`Enemy ${enemyId} removed from room ${roomId}`);
+    }
+    return removed;
+  }
+
+  /**
+   * Update enemy in room
+   */
+  updateEnemyInRoom(roomId: string, enemyId: string, updates: Partial<GameEnemy>): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+
+    const enemy = room.enemies.get(enemyId);
+    if (!enemy) return false;
+
+    Object.assign(enemy, updates);
+    enemy.lastUpdated = Date.now();
+    return true;
+  }
+
+  /**
+   * Get all enemies in a room
+   */
+  getRoomEnemies(roomId: string): EnemyState[] {
+    const room = this.rooms.get(roomId);
+    if (!room) return [];
+
+    return Array.from(room.enemies.values()).map(enemy => this.enemyToEnemyState(enemy));
+  }
+
+  /**
+   * Get specific enemy from room
+   */
+  getRoomEnemy(roomId: string, enemyId: string): GameEnemy | undefined {
+    const room = this.rooms.get(roomId);
+    if (!room) return undefined;
+
+    return room.enemies.get(enemyId);
+  }
+
+  /**
+   * Spawn default enemies for a room when game starts
+   */
+  spawnDefaultEnemies(roomId: string): EnemyState[] {
+    const room = this.rooms.get(roomId);
+    if (!room) return [];
+
+    const enemyCount = Math.min(3, GAME_CONFIG.MAX_ENEMIES_PER_ROOM); // Spawn 3 enemies by default
+    const spawnedEnemies: EnemyState[] = [];
+
+    for (let i = 0; i < enemyCount; i++) {
+      const enemy: GameEnemy = {
+        id: `enemy_${roomId}_${i}_${Date.now()}`,
+        position: {
+          x: (Math.random() - 0.5) * 20, // Random position in 20x20 area
+          y: 1,
+          z: (Math.random() - 0.5) * 20,
+        },
+        rotation: { x: 0, y: Math.random() * Math.PI * 2, z: 0, w: 1 },
+        health: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+        maxHealth: GAME_CONFIG.DEFAULT_ENEMY_HEALTH,
+        isDead: false,
+        isAlive: true,
+        createdAt: Date.now(),
+        lastUpdated: Date.now(),
+      };
+
+      if (this.addEnemyToRoom(roomId, enemy)) {
+        spawnedEnemies.push(this.enemyToEnemyState(enemy));
+      }
+    }
+
+    console.log(`Spawned ${spawnedEnemies.length} enemies in room ${roomId}`);
+    return spawnedEnemies;
+  }
+
   /**
    * Clean up empty rooms
    */
@@ -180,6 +292,7 @@ export class RoomManager {
       id: room.id,
       name: room.name,
       players: Array.from(room.players.values()).map(player => this.playerToPlayerState(player)),
+      enemies: Array.from(room.enemies.values()).map(enemy => this.enemyToEnemyState(enemy)),
       maxPlayers: room.maxPlayers,
       gameMode: room.gameMode,
       isActive: room.gameState === GameState.ACTIVE,
@@ -199,6 +312,20 @@ export class RoomManager {
       health: player.health,
       weapon: player.weapon,
       isAlive: player.isAlive,
+    };
+  }
+
+  /**
+   * Convert GameEnemy to EnemyState for client
+   */
+  private enemyToEnemyState(enemy: GameEnemy): EnemyState {
+    return {
+      id: enemy.id,
+      position: enemy.position,
+      rotation: enemy.rotation,
+      health: enemy.health,
+      isDead: enemy.isDead,
+      isAlive: enemy.isAlive,
     };
   }
 }

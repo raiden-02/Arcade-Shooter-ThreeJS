@@ -17,6 +17,16 @@ export interface RoomState {
   gameMode: string;
   isActive: boolean;
   createdAt: number;
+  enemies?: EnemyState[];
+}
+
+export interface EnemyState {
+  id: string;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number; w: number };
+  health: number;
+  isDead: boolean;
+  isAlive: boolean;
 }
 
 // Connection states
@@ -46,6 +56,11 @@ export interface NetworkEvents {
   'game:start': () => void;
   'game:end': (results: GameResults) => void;
   'weapon:fire': (data: WeaponFireData) => void;
+
+  // Enemy events
+  'enemies:spawned': (enemies: EnemyState[]) => void;
+  'enemy:updated': (enemy: EnemyState) => void;
+  'enemy:died': (enemyId: string) => void;
 
   // System events
   'connection:state': (state: ConnectionState) => void;
