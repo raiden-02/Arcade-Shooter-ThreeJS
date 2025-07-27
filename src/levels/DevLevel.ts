@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { CollisionGroups } from '../core/CollisionGroups';
 import { Engine } from '../core/Engine';
 import { InputAction } from '../core/InputManager';
+import { MultiplayerEngine } from '../core/MultiplayerEngine';
 import { ProjectileManager } from '../core/ProjectileManager';
 import { BaseScene } from '../core/Scene';
 import { WeaponManager } from '../core/WeaponManager';
@@ -146,6 +147,11 @@ export class DevLevel extends BaseScene {
     // Create player and gameplay systems
     this.player = new Player(this.scene, this.input, this.physics);
 
+    // Inform multiplayer engine about the local player
+    if (this.engine instanceof MultiplayerEngine) {
+      this.engine.attachPlayer(this.player);
+    }
+
     // Use player camera for rendering and raycasting
     const playerCam = this.player.getCamera();
     this.engine.camera = playerCam;
@@ -257,6 +263,16 @@ export class DevLevel extends BaseScene {
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
     const weapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateAmmo(weapon.getCurrentAmmo(), weapon.getMagazineSize(), weapon.isReloading());
+
+    // Send updated player state to multiplayer engine
+    if (this.engine instanceof MultiplayerEngine && this.engine.isInMultiplayerMode()) {
+      this.engine.updatePlayerState(
+        this.player.getPosition(),
+        this.player.getRotation(),
+        this.player.getCurrentWeapon(),
+      );
+    }
+
     // Aim-down-sights toggle and HUD crosshair updates - only if alive
     if (!this.player.isPlayerDead()) {
       const aiming = this.input.isPressed(InputAction.Aim);

@@ -1,3 +1,5 @@
+import { Player } from '../player/Player';
+
 import { Engine } from './Engine';
 import { GameState } from './GameStateMachine';
 import { NetworkManager } from './NetworkManager';
@@ -21,6 +23,7 @@ export class MultiplayerEngine extends Engine {
   private localPlayer: PlayerState | null = null;
   private remotePlayers: Map<string, PlayerState> = new Map();
   private networkPlayers: Map<string, NetworkPlayer> = new Map(); // Visual representations
+  private player: Player | null = null;
   private currentRoom: RoomState | null = null;
   private availableRooms: RoomState[] = []; // List of available rooms
   private updateTimer: number = 0; // For controlling network update frequency
@@ -79,6 +82,13 @@ export class MultiplayerEngine extends Engine {
   }
 
   /**
+   * Provide reference to the local Player instance for state sync
+   */
+  public attachPlayer(player: Player): void {
+    this.player = player;
+  }
+
+  /**
    * Connect to multiplayer server
    */
   public async connectToServer(): Promise<boolean> {
@@ -113,6 +123,7 @@ export class MultiplayerEngine extends Engine {
     this.localPlayer = null;
     this.remotePlayers.clear();
     this.currentRoom = null;
+    this.player = null;
 
     // Return to main menu
     this.stateMachine.transition(GameState.MainMenu);
@@ -377,22 +388,17 @@ export class MultiplayerEngine extends Engine {
    */
   private sendPlayerUpdateIfPossible(): void {
     const playerId = this.networkManager.getPlayerId();
-    if (!playerId) return;
+    if (!playerId || !this.player) return;
 
-    // For now, send a simple position update
-    // In a real implementation, this would get data from the actual player
-    const playerName = `Player_${playerId.slice(-4)}`;
-    const dummyState = {
-      id: playerId,
-      name: playerName,
-      position: { x: 0, y: 2, z: 0 }, // Default position
-      rotation: { x: 0, y: 0, z: 0 }, // Default rotation
-      health: 100,
-      weapon: 'assault_rifle',
-      isAlive: true,
+    const update: Partial<PlayerState> = {
+      position: this.player.getPosition(),
+      rotation: this.player.getRotation(),
+      health: this.player.getHealth(),
+      weapon: this.player.getCurrentWeapon(),
+      isAlive: !this.player.isPlayerDead(),
     };
 
-    this.networkManager.updatePlayerState(dummyState);
+    this.networkManager.updatePlayerState(update);
   }
 
   /**
@@ -447,6 +453,7 @@ export class MultiplayerEngine extends Engine {
       networkPlayer.dispose();
     }
     this.networkPlayers.clear();
+    this.player = null;
 
     // Disconnect from server
     this.networkManager.disconnect();
