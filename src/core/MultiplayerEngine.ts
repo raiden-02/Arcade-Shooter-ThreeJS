@@ -69,6 +69,13 @@ export class MultiplayerEngine extends Engine {
   }
 
   /**
+   * Get network players (for projectile collision detection)
+   */
+  public getNetworkPlayers(): Map<string, NetworkPlayer> {
+    return this.networkPlayers;
+  }
+
+  /**
    * Get current room data
    */
   public getCurrentRoom(): RoomState | null {
@@ -429,8 +436,13 @@ export class MultiplayerEngine extends Engine {
       let networkPlayer = this.networkPlayers.get(playerId);
 
       if (!networkPlayer) {
-        // Create new network player using the public scene
-        networkPlayer = new NetworkPlayer(playerId, playerState.name, this.scene);
+        // Create new network player using the public scene and physics world
+        networkPlayer = new NetworkPlayer(
+          playerId,
+          playerState.name,
+          this.scene,
+          this.physics.world,
+        );
         this.networkPlayers.set(playerId, networkPlayer);
         console.log(`Created visual representation for remote player: ${playerState.name}`);
       }

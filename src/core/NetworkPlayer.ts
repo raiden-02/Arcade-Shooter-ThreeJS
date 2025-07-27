@@ -1,20 +1,27 @@
+import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
+import { CollisionGroups } from './CollisionGroups';
 import { PlayerState } from './NetworkTypes';
 
 /**
  * NetworkPlayer represents a remote player in the local game
- * - Visual representation only (no physics collision)
+ * - Visual representation with physics collision for interactions
  * - Handles position/rotation updates from network
  * - Shows player name, health, and weapon
+ * - Can be shot by projectiles and collides with enemies
  */
 export class NetworkPlayer {
   private playerId: string;
   private playerName: string;
   private mesh: THREE.Group;
   private scene: THREE.Scene;
+  private world: RAPIER.World;
   private nameTag: THREE.Sprite | null = null;
   private healthBar: THREE.Group | null = null;
+
+  // Physics components
+  private collider: RAPIER.Collider;
 
   // Current state
   private position: THREE.Vector3;
@@ -30,10 +37,11 @@ export class NetworkPlayer {
   private playerMaterial: THREE.MeshLambertMaterial;
   private playerMesh: THREE.Mesh;
 
-  constructor(playerId: string, playerName: string, scene: THREE.Scene) {
+  constructor(playerId: string, playerName: string, scene: THREE.Scene, world: RAPIER.World) {
     this.playerId = playerId;
     this.playerName = playerName;
     this.scene = scene;
+    this.world = world;
     this.position = new THREE.Vector3(0, 2, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
 
@@ -52,6 +60,17 @@ export class NetworkPlayer {
     this.playerMesh.position.set(0, 0.9, 0); // Center the box on the position
     this.mesh.add(this.playerMesh);
 
+    // Create physics collider for interactions
+    const colliderDesc = RAPIER.ColliderDesc.capsule(0.8, 0.4)
+      .setTranslation(this.position.x, this.position.y, this.position.z)
+      .setCollisionGroups(
+        (CollisionGroups.PLAYER << 16) |
+          CollisionGroups.DEFAULT |
+          CollisionGroups.ENEMY |
+          CollisionGroups.PROJECTILE,
+      );
+    this.collider = world.createCollider(colliderDesc);
+
     // Create name tag
     this.createNameTag();
 
@@ -63,7 +82,7 @@ export class NetworkPlayer {
     this.mesh.rotation.copy(this.rotation);
     this.scene.add(this.mesh);
 
-    console.log(`Created NetworkPlayer: ${playerName} (${playerId})`);
+    console.log(`Created NetworkPlayer with physics: ${playerName} (${playerId})`);
   }
 
   /**
@@ -131,6 +150,10 @@ export class NetworkPlayer {
     // Update position
     this.position.set(state.position.x, state.position.y, state.position.z);
     this.mesh.position.copy(this.position);
+
+    // Update physics collider position
+    const newPosition = new RAPIER.Vector3(state.position.x, state.position.y, state.position.z);
+    this.collider.setTranslation(newPosition);
 
     // Update rotation
     this.rotation.set(state.rotation.x, state.rotation.y, state.rotation.z);
@@ -234,9 +257,38 @@ export class NetworkPlayer {
   }
 
   /**
+   * Get the collider handle for collision detection
+   */
+  public getColliderHandle(): number {
+    return this.collider.handle;
+  }
+
+  /**
+   * Apply damage to the remote player (for multiplayer combat)
+   */
+  public takeDamage(amount: number): void {
+    if (!this.isAlive) return;
+
+    console.log(`Remote player ${this.playerName} took ${amount} damage`);
+    this.health = Math.max(0, this.health - amount);
+    this.updateHealthBar();
+
+    if (this.health <= 0) {
+      this.isAlive = false;
+      this.updateVisibility();
+      console.log(`Remote player ${this.playerName} died`);
+    }
+  }
+
+  /**
    * Clean up and remove from scene
    */
   public dispose(): void {
+    // Remove physics collider
+    if (this.collider && this.world) {
+      this.world.removeCollider(this.collider, true);
+    }
+
     // Remove from scene
     if (this.mesh.parent) {
       this.mesh.parent.remove(this.mesh);
@@ -268,7 +320,7 @@ export class NetworkPlayer {
       });
     }
 
-    console.log(`Disposed NetworkPlayer: ${this.playerName} (${this.playerId})`);
+    console.log(`Disposed NetworkPlayer with physics: ${this.playerName} (${this.playerId})`);
   }
 
   /**

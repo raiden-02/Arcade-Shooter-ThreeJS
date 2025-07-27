@@ -8,6 +8,19 @@ import { UIManager } from '../ui/UIManager';
 import { drawDebugLine } from './DebugHelper';
 import { Projectile } from './Projectile';
 
+// Interface to avoid circular import with MultiplayerEngine
+interface IMultiplayerEngine {
+  getNetworkPlayers(): Map<
+    string,
+    {
+      getColliderHandle(): number;
+      takeDamage(amount: number): void;
+      getPlayerName(): string;
+      getPosition(): { x: number; y: number; z: number };
+    }
+  >;
+}
+
 export class ProjectileManager {
   private projectiles: Projectile[] = [];
   // How long to keep non-explosive shell meshes before cleanup (ms)
@@ -16,6 +29,9 @@ export class ProjectileManager {
   // Reference to player for enemy projectile collisions
   private player?: Player;
   private ui?: UIManager;
+
+  // Reference to multiplayer engine for remote player interactions
+  private multiplayerEngine?: IMultiplayerEngine;
 
   constructor(
     private scene: THREE.Scene,
@@ -30,6 +46,12 @@ export class ProjectileManager {
   }
   public setUIManager(ui: UIManager): void {
     this.ui = ui;
+  }
+  /**
+   * Set the multiplayer engine reference for remote player interactions.
+   */
+  public setMultiplayerEngine(engine: IMultiplayerEngine): void {
+    this.multiplayerEngine = engine;
   }
   /**
    * Process Rapier collision events to explode projectiles that hit non-enemy surfaces.
@@ -61,7 +83,7 @@ export class ProjectileManager {
               );
               this.ui?.showHitMarker();
             }
-            // AOE damage always
+            // AOE damage for enemies
             for (const enemy of this.enemyManager?.enemies || []) {
               if (enemy.isDead) continue;
               const pos = enemy.mesh.position;
@@ -75,6 +97,35 @@ export class ProjectileManager {
                 );
                 enemy.takeDamage(projectile.damage);
                 this.ui?.showHitMarker();
+              }
+            }
+
+            // AOE damage for remote players
+            if (this.multiplayerEngine) {
+              const remotePlayers = this.multiplayerEngine.getNetworkPlayers();
+              for (const [, networkPlayer] of remotePlayers) {
+                const pos = networkPlayer.getPosition();
+                const posVec = new THREE.Vector3(pos.x, pos.y, pos.z);
+                const sqrDist = center.distanceToSquared(posVec);
+                if (sqrDist <= radiusSq) {
+                  const dist = Math.sqrt(sqrDist);
+                  console.log(
+                    `[AOE] Explosion damaged remote player ${networkPlayer.getPlayerName()} at distance ${dist.toFixed(2)}`,
+                  );
+                  networkPlayer.takeDamage(projectile.damage);
+                }
+              }
+            }
+
+            // AOE damage for local player
+            if (this.player) {
+              const playerPos = this.player.getPosition();
+              const playerPosVec = new THREE.Vector3(playerPos.x, playerPos.y, playerPos.z);
+              const sqrDist = center.distanceToSquared(playerPosVec);
+              if (sqrDist <= radiusSq) {
+                const dist = Math.sqrt(sqrDist);
+                console.log(`[AOE] Explosion damaged local player at distance ${dist.toFixed(2)}`);
+                this.player.takeDamage(projectile.damage);
               }
             }
             // Remove explosive immediately
@@ -95,11 +146,36 @@ export class ProjectileManager {
               if (enemyHit && !enemyHit.isDead) {
                 enemyHit.takeDamage(projectile.damage);
                 this.ui?.showHitMarker();
+              } else if (this.multiplayerEngine) {
+                // Check for remote player hit
+                const remotePlayers = this.multiplayerEngine.getNetworkPlayers();
+                for (const [, networkPlayer] of remotePlayers) {
+                  if (networkPlayer.getColliderHandle() === other) {
+                    networkPlayer.takeDamage(projectile.damage);
+                    this.ui?.showHitMarker();
+                    console.log(
+                      `Player projectile hit remote player: ${networkPlayer.getPlayerName()}`,
+                    );
+                    break;
+                  }
+                }
               }
             } else if (projectile.ownerType === 'enemy' && this.player) {
               // Enemy-fired: check player hit
               if (other === this.player.getColliderHandle()) {
                 this.player.takeDamage(projectile.damage);
+              } else if (this.multiplayerEngine) {
+                // Check for remote player hit by enemy projectile
+                const remotePlayers = this.multiplayerEngine.getNetworkPlayers();
+                for (const [, networkPlayer] of remotePlayers) {
+                  if (networkPlayer.getColliderHandle() === other) {
+                    networkPlayer.takeDamage(projectile.damage);
+                    console.log(
+                      `Enemy projectile hit remote player: ${networkPlayer.getPlayerName()}`,
+                    );
+                    break;
+                  }
+                }
               }
             }
             // Deactivate shell and schedule cleanup
