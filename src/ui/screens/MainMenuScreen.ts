@@ -1,5 +1,5 @@
 // src/ui/screens/MainMenuScreen.ts
-import { Engine } from '../../core/Engine';
+import { IGameEngine } from '../../interfaces/IGameEngine';
 import { GameState } from '../../core/GameStateMachine';
 import { SettingsService } from '../../core/SettingsService';
 import { UIScreen } from '../core/UIScreen';
@@ -8,7 +8,7 @@ import { UIScreen } from '../core/UIScreen';
  * Main menu screen with cyberpunk aesthetics.
  */
 export class MainMenuScreen extends UIScreen {
-  constructor(engine: Engine, settingsService: SettingsService) {
+  constructor(engine: IGameEngine, settingsService: SettingsService) {
     super('main-menu', GameState.MainMenu, 'main-menu-screen');
     // Store references if needed later
     void engine;

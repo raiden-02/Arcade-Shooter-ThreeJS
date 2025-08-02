@@ -1,4 +1,4 @@
-import type { Engine } from '../core/Engine';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 import { SettingsService } from '../core/SettingsService';
 import { WeaponOptions } from '../core/Weapon';
 
@@ -15,7 +15,7 @@ export class UIManager {
   ammoInfo: HTMLDivElement;
   deathScreen: HTMLDivElement;
 
-  constructor(settingsService?: SettingsService, engine?: Engine) {
+  constructor(settingsService?: SettingsService, engine?: IGameEngine) {
     if (settingsService && engine) {
       this.settingsPanel = new SettingsPanel(settingsService, engine);
       this.pauseMenu = new PauseMenu(settingsService, engine, this.settingsPanel);

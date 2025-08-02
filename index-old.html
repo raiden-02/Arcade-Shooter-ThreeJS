@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FPS Multiplayer Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        overflow: hidden;
+      }
+
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      }
+
+      #loading-screen h1 {
+        color: #00ff88;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 20px #00ff88;
+      }
+
+      #loading-screen p {
+        color: #888;
+        font-size: 1.2rem;
+        margin: 0.5rem 0;
+      }
+
+      .button-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        z-index: 10000; /* Higher z-index to ensure it's above game UI */
+      }
+
+      .game-button {
+        background: linear-gradient(45deg, #00ff88, #0088ff);
+        color: #000;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        transition: all 0.3s ease;
+      }
+
+      .game-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
+      }
+
+      .game-button.secondary {
+        background: linear-gradient(45deg, #ff6b35, #f7931e);
+        box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+      }
+
+      .game-button.secondary:hover {
+        box-shadow: 0 0 30px rgba(255, 107, 53, 0.7);
+      }
+
+      .architecture-badge {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: 1px solid #00ff88;
+        font-size: 0.9rem;
+        z-index: 1001;
+      }
+
+      .debug-info {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #00ff88;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #00ff88;
+        font-size: 0.8rem;
+        max-width: 300px;
+        z-index: 1001;
+        line-height: 1.4;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Game active state - hide all HTML UI */
+      .game-active .architecture-badge,
+      .game-active .debug-info,
+      .game-active .button-container {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading-screen">
+      <h1>🎮 FPS GAME</h1>
+      <p>Game Loading...</p>
+      <p>Authoritative multiplayer-ready design</p>
+    </div>
+
+    <div class="architecture-badge">Multiplayer FPS</div>
+
+    <div class="debug-info">
+      <strong>🎯 Multiplayer FPS Game</strong><br />
+      <div id="debug-content">Loading...</div>
+    </div>
+
+    <div class="button-container hidden" id="game-buttons">
+      <button class="game-button" onclick="startMultiplayer()">🌐 START MULTIPLAYER</button>
+      <button class="game-button secondary" onclick="startSinglePlayer()">
+        🎮 START SINGLE-PLAYER
+      </button>
+      <button class="game-button secondary" onclick="showDebug()">📊 SHOW DEBUG INFO</button>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+
+    <script>
+      let gameStarted = false;
+
+      // Hide loading screen and show buttons after loading
+      setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const gameButtons = document.getElementById('game-buttons');
+
+        if (loadingScreen) {
+          loadingScreen.style.opacity = '0';
+          loadingScreen.style.transition = 'opacity 1s ease-out';
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            gameButtons.classList.remove('hidden');
+            updateDebugInfo();
+          }, 1000);
+        }
+      }, 2000);
+
+      // Update debug info periodically
+      function updateDebugInfo() {
+        const debugContent = document.getElementById('debug-content');
+        if (window.gameDebug) {
+          const state = window.gameDebug.getGameState();
+          debugContent.innerHTML = `
+            Mode: ${state.networkMode}<br/>
+            Players: ${state.remotePlayers.length + (state.localPlayer ? 1 : 0)}<br/>
+            Tick: ${state.tick}<br/>
+            Projectiles: ${state.projectiles}<br/>
+            Enemies: ${state.enemies}<br/>
+            <small>Press F12 for detailed debug</small>
+          `;
+        } else {
+          debugContent.innerHTML = 'Engine not ready...';
+        }
+
+        if (!gameStarted) {
+          setTimeout(updateDebugInfo, 1000);
+        }
+      }
+
+      // Start multiplayer game
+      async function startMultiplayer() {
+        if (gameStarted) return;
+        gameStarted = true;
+
+        // Add game-active class to body to hide HTML UI
+        document.body.classList.add('game-active');
+
+        const playerName = prompt('Enter your player name:') || `Player_${Date.now().toString().slice(-6)}`;
+
+        if (window.gameDebug && window.gameDebug.startMultiplayer) {
+          console.log('🌐 Starting multiplayer...');
+          const success = await window.gameDebug.startMultiplayer(playerName);
+          if (!success) {
+            console.error('Failed to start multiplayer, showing buttons again');
+            document.body.classList.remove('game-active');
+            gameStarted = false;
+          }
+        } else {
+          console.warn('Game engine not ready yet');
+          setTimeout(async () => {
+            if (window.gameDebug && window.gameDebug.startMultiplayer) {
+              const success = await window.gameDebug.startMultiplayer(playerName);
+              if (!success) {
+                document.body.classList.remove('game-active');
+                gameStarted = false;
+              }
+            }
+          }, 1000);
+        }
+      }
+
+      // Start single-player game
+      function startSinglePlayer() {
+        if (gameStarted) return;
+        gameStarted = true;
+
+        // Add game-active class to body to hide HTML UI
+        document.body.classList.add('game-active');
+
+        if (window.gameDebug && window.gameDebug.startSinglePlayer) {
+          console.log('🎮 Starting single-player...');
+          window.gameDebug.startSinglePlayer();
+        } else {
+          console.warn('Game engine not ready yet');
+          setTimeout(() => {
+            if (window.gameDebug && window.gameDebug.startSinglePlayer) {
+              window.gameDebug.startSinglePlayer();
+            }
+          }, 1000);
+        }
+      }
+
+      // Show debug information
+      function showDebug() {
+        if (window.gameDebug && window.gameDebug.showDebug) {
+          window.gameDebug.showDebug();
+        }
+      }
+
+      // ESC key to show/hide buttons (if game not started)
+      document.addEventListener('keydown', e => {
+        if (e.code === 'Escape' && !gameStarted) {
+          const buttons = document.getElementById('game-buttons');
+          if (buttons.style.display === 'none') {
+            buttons.style.display = 'flex';
+          } else {
+            buttons.style.display = 'none';
+          }
+        }
+      });
+
+      console.log('🎮 Multiplayer FPS Game - Ready!');
+      console.log('📋 Available Commands:');
+      console.log('  - Click "START MULTIPLAYER" to connect to game server');
+      console.log('  - Click "START SINGLE-PLAYER" for offline play');
+      console.log('  - WASD to move, Mouse to look');
+      console.log('  - Left click to fire');
+      console.log('  - ESC to pause/resume');
+    </script>
+  </body>
+</html>

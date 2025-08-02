@@ -1,5 +1,5 @@
 // src/ui/screens/GameUIScreen.ts
-import { Engine } from '../../core/Engine';
+import { IGameEngine } from '../../interfaces/IGameEngine';
 import { GameState } from '../../core/GameStateMachine';
 import { SettingsService } from '../../core/SettingsService';
 import { WeaponOptions } from '../../core/Weapon';
@@ -15,7 +15,7 @@ export class GameUIScreen extends UIScreen {
   private ammoDisplay!: HTMLElement;
   private hitMarker!: HTMLElement;
 
-  constructor(engine: Engine, settingsService: SettingsService) {
+  constructor(engine: IGameEngine, settingsService: SettingsService) {
     super('game-ui', GameState.Playing, 'game-ui-screen');
     // Store references if needed later
     void engine;

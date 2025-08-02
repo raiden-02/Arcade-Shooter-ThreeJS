@@ -1,6 +1,6 @@
 // src/ui/core/NewUIManager.ts
 import { IGameEngine } from '../../interfaces/IGameEngine';
-import { GameState } from '../../core/GameStateMachine';
+import { GameState, GameStateMachine } from '../../core/GameStateMachine';
 import { SettingsService } from '../../core/SettingsService';
 import { GameOverScreen } from '../screens/GameOverScreen.ts';
 import { GameUIScreen } from '../screens/GameUIScreen.ts';
@@ -148,17 +148,13 @@ export class NewUIManager {
     // Clean up event listeners
     // Clean up screens
     this.screens.forEach(screen => {
-      // Note: dispose method would need to be added to UIScreen interface
-      // screen.dispose();
-      void screen;
+      screen.dispose();
     });
     this.screens.clear();
 
     // Clean up overlays
     this.overlays.forEach(overlay => {
-      // Note: dispose method would need to be added to UIComponent interface
-      // overlay.dispose();
-      void overlay;
+      overlay.dispose();
     });
     this.overlays.length = 0;
 

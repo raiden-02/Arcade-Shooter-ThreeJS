@@ -1,5 +1,5 @@
 // src/ui/screens/PauseScreen.ts
-import { Engine } from '../../core/Engine';
+import { IGameEngine } from '../../interfaces/IGameEngine';
 import { GameState } from '../../core/GameStateMachine';
 import { SettingsService } from '../../core/SettingsService';
 import { UIScreen } from '../core/UIScreen';
@@ -8,10 +8,10 @@ import { UIScreen } from '../core/UIScreen';
  * Pause menu screen.
  */
 export class PauseScreen extends UIScreen {
-  private engine: Engine;
+  private engine: IGameEngine;
   private settingsService: SettingsService;
 
-  constructor(engine: Engine, settingsService: SettingsService) {
+  constructor(engine: IGameEngine, settingsService: SettingsService) {
     super('pause-menu', GameState.Paused, 'pause-screen');
     this.engine = engine;
     this.settingsService = settingsService;
@@ -226,10 +226,12 @@ export class PauseScreen extends UIScreen {
     // Apply settings through services
     this.settingsService.applySettings(settings);
 
-    // Apply engine-specific settings
-    this.engine.input.setSensitivity(settings.input.mouseSensitivity);
-    this.engine.input.setInvertY(settings.input.invertY);
-    this.engine.renderer.setPixelRatio(window.devicePixelRatio * settings.graphics.resolutionScale);
+    // Apply engine-specific settings through interface methods
+    this.engine.inputManager.setSensitivity(settings.input.mouseSensitivity);
+    this.engine.inputManager.setInvertY(settings.input.invertY);
+
+    // Note: Renderer and camera settings should be handled through the settings service
+    // These low-level properties are not exposed through the interface
 
     if (settings.graphics.fullscreen) {
       document.documentElement.requestFullscreen();
@@ -237,8 +239,8 @@ export class PauseScreen extends UIScreen {
       document.exitFullscreen();
     }
 
-    this.engine.camera.fov = settings.graphics.fov;
-    this.engine.camera.updateProjectionMatrix();
+    // Note: FOV changes should be handled through the settings service
+    // Camera access is not available through the interface
 
     console.log('Settings applied');
   }

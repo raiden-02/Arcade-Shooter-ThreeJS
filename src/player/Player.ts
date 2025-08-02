@@ -2,7 +2,7 @@ import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
 import { CollisionGroups } from '../core/CollisionGroups';
-import { InputManager } from '../core/InputManager';
+import { IInputManager } from '../interfaces/IInputManager';
 import { PhysicsHelper } from '../core/PhysicsHelper';
 
 import { CameraRig } from './CameraRig';
@@ -36,7 +36,7 @@ export class Player {
    */
   constructor(
     scene: THREE.Scene,
-    input: InputManager,
+    input: IInputManager,
     physics: PhysicsHelper,
     spawnPos: RAPIER.Vector3 = new RAPIER.Vector3(0, 2, 0),
   ) {

@@ -168,7 +168,7 @@ export class GameRoom extends Room<GameState> {
     }
 
     const player = new PlayerState();
-    
+
     // Ensure all properties are properly initialized
     player.id = String(client.sessionId);
     player.name = String(options.playerName || `Player_${client.sessionId.substr(-6)}`);
@@ -189,7 +189,13 @@ export class GameRoom extends Room<GameState> {
     player.z = Number(spawn.z) || 0;
 
     // Validate player before adding to state
-    if (player.id && player.name && typeof player.x === 'number' && typeof player.y === 'number' && typeof player.z === 'number') {
+    if (
+      player.id &&
+      player.name &&
+      typeof player.x === 'number' &&
+      typeof player.y === 'number' &&
+      typeof player.z === 'number'
+    ) {
       this.state.players.set(client.sessionId, player);
       this.inputs.set(client.sessionId, {
         seq: 0,
@@ -398,13 +404,19 @@ export class GameRoom extends Room<GameState> {
   // Authoritative projectile spawning (section 2.4.2)
   private spawnProjectile(player: PlayerState): void {
     // Validate player state before creating projectile
-    if (!player || !player.id || typeof player.x !== 'number' || typeof player.y !== 'number' || typeof player.z !== 'number') {
+    if (
+      !player ||
+      !player.id ||
+      typeof player.x !== 'number' ||
+      typeof player.y !== 'number' ||
+      typeof player.z !== 'number'
+    ) {
       console.error('❌ Invalid player state for projectile spawn:', player);
       return;
     }
 
     const proj = new ProjectileState();
-    
+
     // Ensure all properties are properly initialized
     proj.id = `${player.id}_${this.state.tick}` || `unknown_${Date.now()}`;
     proj.x = Number(player.x) || 0;
@@ -414,7 +426,7 @@ export class GameRoom extends Room<GameState> {
     // Calculate direction from yaw and pitch with fallbacks
     const yaw = Number(player.yaw) || 0;
     const pitch = Number(player.pitch) || 0;
-    
+
     proj.dirX = Number(-Math.sin(yaw) * Math.cos(pitch)) || 0;
     proj.dirY = Number(-Math.sin(pitch)) || 0;
     proj.dirZ = Number(-Math.cos(yaw) * Math.cos(pitch)) || -1;
@@ -425,7 +437,12 @@ export class GameRoom extends Room<GameState> {
     proj.speed = Number(PROJECTILE_SPEED) || 30;
 
     // Validate all properties before adding
-    if (proj.id && typeof proj.x === 'number' && typeof proj.y === 'number' && typeof proj.z === 'number') {
+    if (
+      proj.id &&
+      typeof proj.x === 'number' &&
+      typeof proj.y === 'number' &&
+      typeof proj.z === 'number'
+    ) {
       this.state.projectiles.push(proj);
 
       // Store projectile metadata
@@ -445,7 +462,10 @@ export class GameRoom extends Room<GameState> {
   private damagePlayer(player: PlayerState, projectile: ProjectileState): void {
     // Validate inputs
     if (!player || !projectile || typeof projectile.damage !== 'number') {
-      console.error('❌ Invalid damage parameters:', { player: !!player, projectile: !!projectile });
+      console.error('❌ Invalid damage parameters:', {
+        player: !!player,
+        projectile: !!projectile,
+      });
       return;
     }
 
@@ -459,9 +479,15 @@ export class GameRoom extends Room<GameState> {
     hitEvent.damage = Number(projectile.damage) || 0;
     hitEvent.weaponType = String(projectile.weaponType) || 'unknown';
     hitEvent.timestamp = Number(Date.now());
-    
+
     // Only add event if all properties are valid
-    if (hitEvent.type && hitEvent.victimId && hitEvent.attackerId && typeof hitEvent.damage === 'number' && typeof hitEvent.timestamp === 'number') {
+    if (
+      hitEvent.type &&
+      hitEvent.victimId &&
+      hitEvent.attackerId &&
+      typeof hitEvent.damage === 'number' &&
+      typeof hitEvent.timestamp === 'number'
+    ) {
       this.state.events.push(hitEvent);
     } else {
       console.error('❌ Failed to create valid hit event:', hitEvent);

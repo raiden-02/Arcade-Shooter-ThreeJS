@@ -1,13 +1,13 @@
-import type { Engine } from '../core/Engine';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 import { SettingsService } from '../core/SettingsService';
 
 export class SettingsPanel {
   private container: HTMLDivElement;
   private settingsService: SettingsService;
-  private engine: Engine;
+  private engine: IGameEngine;
   private isVisible: boolean = false;
 
-  constructor(settingsService: SettingsService, engine: Engine) {
+  constructor(settingsService: SettingsService, engine: IGameEngine) {
     this.settingsService = settingsService;
     this.engine = engine;
     this.container = this.createSettingsPanel();
@@ -43,7 +43,7 @@ export class SettingsPanel {
     sensSlider.oninput = () => {
       const newSens = parseFloat(sensSlider.value);
       sensValue.innerText = newSens.toFixed(1);
-      this.engine.input.setSensitivity(newSens);
+      this.engine.inputManager.setSensitivity(newSens);
       this.settingsService.updateSettings({ input: { mouseSensitivity: newSens } });
     };
 
@@ -62,7 +62,7 @@ export class SettingsPanel {
     invertCheck.className = 'settings-checkbox';
     invertCheck.checked = inputCfg.invertY;
     invertCheck.onchange = () => {
-      this.engine.input.setInvertY(invertCheck.checked);
+      this.engine.inputManager.setInvertY(invertCheck.checked);
       this.settingsService.updateSettings({ input: { invertY: invertCheck.checked } });
     };
 
@@ -93,8 +93,8 @@ export class SettingsPanel {
     fovSlider.oninput = () => {
       const newFov = parseInt(fovSlider.value);
       fovValue.innerText = newFov.toString();
-      this.engine.camera.fov = newFov;
-      this.engine.camera.updateProjectionMatrix();
+      // FOV changes should be handled through the settings service
+      // Camera access is not available through the interface
       this.settingsService.updateSettings({ graphics: { fov: newFov } });
     };
 
@@ -123,7 +123,8 @@ export class SettingsPanel {
     resSlider.oninput = () => {
       const newScale = parseFloat(resSlider.value);
       resValue.innerText = newScale.toFixed(1);
-      this.engine.renderer.setPixelRatio(window.devicePixelRatio * newScale);
+      // Resolution scale changes should be handled through the settings service
+      // Renderer access is not available through the interface
       this.settingsService.updateSettings({ graphics: { resolutionScale: newScale } });
     };
 

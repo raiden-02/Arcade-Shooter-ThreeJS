@@ -22,7 +22,7 @@ const gameServer = new Server({
 });
 
 // Register room handlers
-gameServer.define('arena', GameRoom).filterBy(['gameMode']);
+gameServer.define('arena', GameRoom);
 
 // Monitoring dashboard (dev only)
 if (process.env.NODE_ENV !== 'production') {
@@ -39,7 +39,7 @@ app.get('/health', (_req, res) => {
 
 // Start server
 httpServer.listen(port, () => {
-  console.log(`🎮 Colyseus FPS Game Server listening on :${port}`);
+  console.log(`🎮 Multiplayer FPS Game Server listening on :${port}`);
   console.log(`📊 Monitor available at http://localhost:${port}/colyseus`);
 });
 

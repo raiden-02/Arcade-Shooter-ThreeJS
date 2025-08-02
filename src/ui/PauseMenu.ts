@@ -1,4 +1,4 @@
-import type { Engine } from '../core/Engine';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 import { GameState } from '../core/GameStateMachine';
 import { SettingsService } from '../core/SettingsService';
 
@@ -6,10 +6,14 @@ import { SettingsPanel } from './SettingsPanel';
 
 export class PauseMenu {
   container: HTMLDivElement;
-  private engine?: Engine;
+  private engine?: IGameEngine;
   private settingsPanel?: SettingsPanel;
 
-  constructor(_settingsService?: SettingsService, engine?: Engine, settingsPanel?: SettingsPanel) {
+  constructor(
+    _settingsService?: SettingsService,
+    engine?: IGameEngine,
+    settingsPanel?: SettingsPanel,
+  ) {
     this.engine = engine;
     this.settingsPanel = settingsPanel;
 
@@ -44,7 +48,7 @@ export class PauseMenu {
     mainMenuBtn.className = 'pause-btn';
     mainMenuBtn.onclick = () => {
       if (this.engine && confirm('Return to main menu? Any unsaved progress will be lost.')) {
-        this.engine.stateMachine.transition(GameState.MainMenu);
+        this.engine.transitionToState(GameState.MainMenu);
       }
     };
 

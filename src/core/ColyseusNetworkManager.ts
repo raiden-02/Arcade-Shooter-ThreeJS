@@ -185,14 +185,12 @@ export class ColyseusNetworkManager {
       this.connectionState = ConnectionState.CONNECTED;
       this.playerId = this.room.sessionId;
 
-      console.log(
-        `🎮 Connected to Colyseus room: ${this.room.roomId}, sessionId: ${this.playerId}`,
-      );
+      console.log(`🎮 Connected to game room: ${this.room.roomId}, sessionId: ${this.playerId}`);
 
       this.setupRoomEventHandlers();
       return true;
     } catch (err) {
-      console.error('❌ Failed to connect to Colyseus:', err);
+      console.error('❌ Failed to connect to game server:', err);
       this.connectionState = ConnectionState.ERROR;
       return false;
     }
