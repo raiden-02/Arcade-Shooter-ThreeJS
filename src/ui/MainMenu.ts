@@ -1,7 +1,7 @@
-import type { IGameEngine } from '../interfaces/IGameEngine';
 import { GameState } from '../core/GameStateMachine';
 import type { MultiplayerEngine } from '../core/MultiplayerEngine';
 import type { RoomState } from '../core/NetworkTypes';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 
 import { SettingsPanel } from './SettingsPanel';
 

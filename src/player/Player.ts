@@ -2,8 +2,8 @@ import * as RAPIER from '@dimforge/rapier3d';
 import * as THREE from 'three';
 
 import { CollisionGroups } from '../core/CollisionGroups';
-import { IInputManager } from '../interfaces/IInputManager';
 import { PhysicsHelper } from '../core/PhysicsHelper';
+import { IInputManager } from '../interfaces/IInputManager';
 
 import { CameraRig } from './CameraRig';
 import { PlayerController } from './PlayerController';

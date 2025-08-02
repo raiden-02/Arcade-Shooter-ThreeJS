@@ -1,5 +1,6 @@
 // src/interfaces/IScene.ts
 import * as THREE from 'three';
+
 import { IGameEngine } from './IGameEngine';
 import { IPlayer } from './IPlayer';
 

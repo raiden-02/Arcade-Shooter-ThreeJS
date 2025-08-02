@@ -1,6 +1,6 @@
-import type { IGameEngine } from '../interfaces/IGameEngine';
 import { GameState } from '../core/GameStateMachine';
 import { SettingsService } from '../core/SettingsService';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 
 import { SettingsPanel } from './SettingsPanel';
 

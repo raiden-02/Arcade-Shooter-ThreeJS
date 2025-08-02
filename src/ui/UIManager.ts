@@ -1,6 +1,6 @@
-import type { IGameEngine } from '../interfaces/IGameEngine';
 import { SettingsService } from '../core/SettingsService';
 import { WeaponOptions } from '../core/Weapon';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 
 import { HUD } from './HUD';
 import { PauseMenu } from './PauseMenu';

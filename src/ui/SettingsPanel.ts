@@ -1,5 +1,5 @@
-import type { IGameEngine } from '../interfaces/IGameEngine';
 import { SettingsService } from '../core/SettingsService';
+import type { IGameEngine } from '../interfaces/IGameEngine';
 
 export class SettingsPanel {
   private container: HTMLDivElement;

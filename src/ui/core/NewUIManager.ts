@@ -1,7 +1,7 @@
 // src/ui/core/NewUIManager.ts
-import { IGameEngine } from '../../interfaces/IGameEngine';
 import { GameState } from '../../core/GameStateMachine';
 import { SettingsService } from '../../core/SettingsService';
+import { IGameEngine } from '../../interfaces/IGameEngine';
 import { GameOverScreen } from '../screens/GameOverScreen.ts';
 import { GameUIScreen } from '../screens/GameUIScreen.ts';
 import { MainMenuScreen } from '../screens/MainMenuScreen.ts';
