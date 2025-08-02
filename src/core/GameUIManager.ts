@@ -186,10 +186,7 @@ export class GameUIManager implements IUIManager {
         break;
       case GameState.Playing:
         this.showGameUI();
-        // Trigger the engine state change
-        if (this.engine) {
-          this.engine.transitionToState(GameState.Playing);
-        }
+        // Don't call engine.transitionToState here - it creates infinite loop!
         break;
       case GameState.Paused:
         this.showPauseMenu();

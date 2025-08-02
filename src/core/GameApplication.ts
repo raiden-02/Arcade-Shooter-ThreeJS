@@ -200,68 +200,115 @@ export class GameApplication {
    * Create the appropriate engine based on configuration
    */
   private async createEngine(config: GameConfig): Promise<IGameEngine> {
-    // Create a working mock engine that properly implements all methods
-    const mockEngine: IGameEngine = {
-      inputManager: {} as unknown,
-      physicsWorld: {} as unknown,
-      networkManager:
-        config.mode === GameMode.Multiplayer
-          ? ({
-              createSession: async (sessionName: string, maxPlayers: number) => {
-                const sessionId = `SESSION_${Date.now().toString().slice(-6)}`;
-                console.log(
-                  `✅ Created session: ${sessionId} (${sessionName}, ${maxPlayers} players)`,
-                );
-                setTimeout(() => {
-                  if (this.uiManager) {
-                    this.uiManager.displaySessionId(sessionId);
-                  }
-                }, 1000);
-                return sessionId;
-              },
-              joinSession: async (sessionId: string, playerName: string) => {
-                console.log(`✅ Joined session: ${sessionId} as ${playerName}`);
-                return true;
-              },
-              getCurrentSessionId: () => `SESSION_${Date.now().toString().slice(-6)}`,
-              isConnected: () => true,
-              getConnectionStatus: () => 'Connected',
-            } as unknown)
-          : undefined,
+    console.log('🔧 Creating engine for mode:', config.mode);
 
-      loadScene: async (scene: IScene) => {
-        console.log(`Loading scene: ${scene.name}`);
-        this.currentScene = scene;
-      },
+    if (config.mode === GameMode.Multiplayer) {
+      // Create multiplayer engine with connectToServer method
+      const multiplayerEngine: IGameEngine & { connectToServer: () => Promise<void> } = {
+        inputManager: {} as any,
+        physicsWorld: {} as any,
+        networkManager: {
+          createSession: async (sessionName: string, maxPlayers: number) => {
+            const sessionId = `SESSION_${Date.now().toString().slice(-6)}`;
+            console.log(`✅ Created session: ${sessionId} (${sessionName}, ${maxPlayers} players)`);
+            setTimeout(() => {
+              if (this.uiManager) {
+                this.uiManager.displaySessionId(sessionId);
+              }
+            }, 1000);
+            return sessionId;
+          },
+          joinSession: async (sessionId: string, playerName: string) => {
+            console.log(`✅ Joined session: ${sessionId} as ${playerName}`);
+            return true;
+          },
+          getCurrentSessionId: () => `SESSION_${Date.now().toString().slice(-6)}`,
+          isConnected: () => true,
+          getConnectionStatus: () => 'Connected',
+        } as any,
 
-      getCurrentScene: () => this.currentScene,
-      getCurrentState: () => GameState.MainMenu,
+        loadScene: async (scene: IScene) => {
+          console.log(`📋 Loading scene: ${scene.name}`);
+          this.currentScene = scene;
+          await scene.initialize(multiplayerEngine);
+        },
 
-      transitionToState: (state: GameState) => {
-        console.log(`Transitioning to state: ${state}`);
-        if (this.uiManager) {
-          this.uiManager.handleGameStateChange(GameState.MainMenu, state);
-        }
-      },
+        getCurrentScene: () => this.currentScene,
+        getCurrentState: () => GameState.MainMenu,
 
-      start: () => {
-        console.log(`Game engine started in container: ${this.container.id || 'app'}`);
-      },
+        transitionToState: (state: GameState) => {
+          console.log(`🔄 Transitioning to state: ${state}`);
+          if (this.uiManager) {
+            this.uiManager.handleGameStateChange(GameState.MainMenu, state);
+          }
+        },
 
-      stop: () => {
-        console.log('Game engine stopped');
-      },
+        start: () => {
+          console.log(`🚀 Multiplayer engine started`);
+        },
 
-      update: (deltaTime: number) => {
-        // Mock update - use deltaTime for potential future features
-        void deltaTime;
-      },
+        stop: () => {
+          console.log('⏸️ Multiplayer engine stopped');
+        },
 
-      isMultiplayer: () => config.mode === GameMode.Multiplayer,
-      getPlayerId: () => (config.mode === GameMode.Multiplayer ? 'player-123' : 'local-player'),
-    };
+        update: (deltaTime: number) => {
+          void deltaTime;
+        },
 
-    return mockEngine;
+        isMultiplayer: () => true,
+        getPlayerId: () => 'player-123',
+
+        // Add the connectToServer method that MainMenu checks for
+        connectToServer: async () => {
+          console.log('🌐 Connecting to Colyseus server at ws://localhost:3000');
+          // TODO: Implement actual Colyseus connection
+        },
+      };
+
+      console.log('✅ Multiplayer engine created');
+      return multiplayerEngine;
+    } else {
+      // Create single player engine
+      const singlePlayerEngine: IGameEngine = {
+        inputManager: {} as any,
+        physicsWorld: {} as any,
+        networkManager: undefined,
+
+        loadScene: async (scene: IScene) => {
+          console.log(`📋 Loading scene: ${scene.name}`);
+          this.currentScene = scene;
+          await scene.initialize(singlePlayerEngine);
+        },
+
+        getCurrentScene: () => this.currentScene,
+        getCurrentState: () => GameState.MainMenu,
+
+        transitionToState: (state: GameState) => {
+          console.log(`🔄 Transitioning to state: ${state}`);
+          if (this.uiManager) {
+            this.uiManager.handleGameStateChange(GameState.MainMenu, state);
+          }
+        },
+
+        start: () => {
+          console.log(`🚀 Single player engine started`);
+        },
+
+        stop: () => {
+          console.log('⏸️ Single player engine stopped');
+        },
+
+        update: (deltaTime: number) => {
+          void deltaTime;
+        },
+
+        isMultiplayer: () => false,
+        getPlayerId: () => 'local-player',
+      };
+
+      console.log('✅ Single player engine created');
+      return singlePlayerEngine;
+    }
   }
 
   /**
