@@ -2,7 +2,7 @@
 import { IGameEngine } from '../interfaces/IGameEngine';
 import { IScene } from '../interfaces/IScene';
 import { IUIManager } from '../interfaces/IUIManager';
-import { DevLevel } from '../levels/DevLevel';
+// import { DevLevel } from '../levels/DevLevel'; // Temporarily commented out
 
 import { GameState } from './GameStateMachine';
 import { MultiplayerEngine } from './MultiplayerEngine';
@@ -53,11 +53,11 @@ export class GameApplication {
       // Create UI manager
       this.uiManager = new ProductionUIManager();
 
-      // Load initial scene
-      this.currentScene = new DevLevel();
-      if (this.currentScene) {
-        await this.engine.loadScene(this.currentScene);
-      }
+      // Load initial scene (temporarily disabled for testing)
+      // this.currentScene = new DevLevel();
+      // if (this.currentScene) {
+      //   await this.engine.loadScene(this.currentScene);
+      // }
 
       // Set up game state transitions
       this.setupGameStateHandlers();
