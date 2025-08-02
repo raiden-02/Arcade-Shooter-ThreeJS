@@ -3,13 +3,11 @@ import { SettingsService } from '../core/SettingsService';
 import { WeaponOptions } from '../core/Weapon';
 
 import { HUD } from './HUD';
-import { MainMenu } from './MainMenu';
 import { PauseMenu } from './PauseMenu';
 import { SettingsPanel } from './SettingsPanel';
 
 export class UIManager {
   pauseMenu: PauseMenu;
-  mainMenu: MainMenu;
   hud: HUD;
   settingsPanel: SettingsPanel;
   weaponInfo: HTMLDivElement;
@@ -21,12 +19,11 @@ export class UIManager {
     if (settingsService && engine) {
       this.settingsPanel = new SettingsPanel(settingsService, engine);
       this.pauseMenu = new PauseMenu(settingsService, engine, this.settingsPanel);
-      this.mainMenu = new MainMenu(engine, this.settingsPanel);
     } else {
       this.pauseMenu = new PauseMenu();
-      // MainMenu requires engine, so create a minimal placeholder
+      // SettingsPanel requires engine, so create a minimal placeholder
       // This branch is for backwards compatibility
-      throw new Error('MainMenu and SettingsPanel require Engine and SettingsService parameters');
+      throw new Error('SettingsPanel requires Engine and SettingsService parameters');
     }
     this.hud = new HUD();
     // Weapon info display
@@ -147,7 +144,7 @@ export class UIManager {
   }
 
   showMainMenu() {
-    this.mainMenu.show();
+    // Main menu now handled via HTML interface
     this.hud.hide();
     this.weaponInfo.style.display = 'none';
     this.healthInfo.style.display = 'none';
@@ -155,6 +152,7 @@ export class UIManager {
   }
 
   hideMainMenu() {
-    this.mainMenu.hide();
+    // Main menu now handled via HTML interface
+    console.log('Main menu hidden via HTML interface');
   }
 }

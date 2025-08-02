@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@dimforge/rapier3d": "^0.15.0",
+    "colyseus.js": "^0.16.19",
     "ecs-three": "^1.0.20",
     "ecsy": "^0.4.2",
     "socket.io-client": "^4.7.5",

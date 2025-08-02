@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { CollisionGroups } from '../core/CollisionGroups';
 import { Engine } from '../core/Engine';
 import { InputAction } from '../core/InputManager';
-import { MultiplayerEngine } from '../core/MultiplayerEngine';
 import { ProjectileManager } from '../core/ProjectileManager';
 import { BaseScene } from '../core/Scene';
 import { WeaponManager } from '../core/WeaponManager';
@@ -24,9 +23,6 @@ export class DevLevel extends BaseScene {
   private wasFiring: boolean = false;
   private defaultFov!: number;
   private adsFov!: number;
-
-  // Multiplayer enemy event handlers
-  private enemyEventHandlers: { [key: string]: EventListener } = {};
 
   /**
    * Handle weapon switching via number keys or Q.
@@ -151,11 +147,6 @@ export class DevLevel extends BaseScene {
     // Create player and gameplay systems
     this.player = new Player(this.scene, this.input, this.physics);
 
-    // Inform multiplayer engine about the local player
-    if (this.engine instanceof MultiplayerEngine) {
-      this.engine.attachPlayer(this.player);
-    }
-
     // Use player camera for rendering and raycasting
     const playerCam = this.player.getCamera();
     this.engine.camera = playerCam;
@@ -175,11 +166,6 @@ export class DevLevel extends BaseScene {
     // Provide player reference for projectile collision handling
     this.projectileManager.setPlayer(this.player);
     this.projectileManager.setUIManager(this.ui);
-
-    // Set multiplayer engine reference for remote player interactions
-    if (this.engine instanceof MultiplayerEngine) {
-      this.projectileManager.setMultiplayerEngine(this.engine);
-    }
 
     this.weaponManager = new WeaponManager(this.projectileManager);
 
@@ -210,19 +196,11 @@ export class DevLevel extends BaseScene {
     this.defaultFov = this.camera.fov;
     this.adsFov = initialOpts.adsFov ?? this.defaultFov * 0.75;
 
-    // Only spawn enemies in singleplayer or if we're the host in multiplayer
-    if (
-      !(this.engine instanceof MultiplayerEngine) ||
-      (this.engine instanceof MultiplayerEngine && this.engine.isHost())
-    ) {
-      // Spawn placeholder enemies
-      this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
-      // this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
-      // this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
-      console.log('Spawned local enemies (host or singleplayer)');
-    } else {
-      console.log('Joined player - waiting for enemies from server');
-    }
+    // Spawn placeholder enemies (handled locally for now)
+    this.enemyManager.spawnEnemy(new THREE.Vector3(5, 2, -5));
+    // this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 2, 5));
+    // this.enemyManager.spawnEnemy(new THREE.Vector3(10, 2, -10));
+    console.log('Spawned local enemies');
 
     // Update initial UI for weapon
     const initial = this.weaponManager.getCurrentWeapon();
@@ -238,11 +216,6 @@ export class DevLevel extends BaseScene {
 
     // Weapon switching input
     window.addEventListener('keydown', this.onKeyDown);
-
-    // Multiplayer enemy event handlers
-    if (this.engine instanceof MultiplayerEngine) {
-      this.setupMultiplayerEnemyHandlers();
-    }
   }
 
   /**
@@ -288,15 +261,6 @@ export class DevLevel extends BaseScene {
     this.ui.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
     const weapon = this.weaponManager.getCurrentWeapon();
     this.ui.updateAmmo(weapon.getCurrentAmmo(), weapon.getMagazineSize(), weapon.isReloading());
-
-    // Send updated player state to multiplayer engine
-    if (this.engine instanceof MultiplayerEngine && this.engine.isInMultiplayerMode()) {
-      this.engine.updatePlayerState(
-        this.player.getPosition(),
-        this.player.getRotation(),
-        this.player.getCurrentWeapon(),
-      );
-    }
 
     // Aim-down-sights toggle and HUD crosshair updates - only if alive
     if (!this.player.isPlayerDead()) {
@@ -353,107 +317,10 @@ export class DevLevel extends BaseScene {
   }
 
   /**
-   * Setup multiplayer enemy event handlers
-   */
-  private setupMultiplayerEnemyHandlers(): void {
-    // Handler for enemies spawned
-    this.enemyEventHandlers['enemies:spawned'] = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const enemies: Array<{
-        id: string;
-        position: { x: number; y: number; z: number };
-        rotation: { x: number; y: number; z: number; w: number };
-        health: number;
-        isDead: boolean;
-        isAlive: boolean;
-      }> = customEvent.detail;
-
-      console.log(`Receiving ${enemies.length} enemies from server - clearing local enemies first`);
-
-      // Clear any existing local enemies to prevent duplication
-      this.enemyManager.enemies.forEach(enemy => {
-        enemy.die();
-      });
-      this.enemyManager.enemies.length = 0;
-
-      // Create actual enemy objects in the game world from server data
-      enemies.forEach(enemyData => {
-        if (!enemyData.isDead && enemyData.isAlive) {
-          const position = new THREE.Vector3(
-            enemyData.position.x,
-            enemyData.position.y,
-            enemyData.position.z,
-          );
-          this.enemyManager.spawnEnemy(position);
-          console.log(
-            `Created enemy from server at position: ${enemyData.position.x}, ${enemyData.position.y}, ${enemyData.position.z}`,
-          );
-        }
-      });
-    }; // Handler for enemy updates
-    this.enemyEventHandlers['enemy:updated'] = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const enemyData: {
-        id: string;
-        position: { x: number; y: number; z: number };
-        rotation: { x: number; y: number; z: number; w: number };
-        health: number;
-        isDead: boolean;
-        isAlive: boolean;
-      } = customEvent.detail;
-
-      console.log(
-        `Enemy updated: ${enemyData.id}, health: ${enemyData.health}, isDead: ${enemyData.isDead}`,
-      );
-
-      // Find and update the corresponding enemy
-      const enemy = this.enemyManager.enemies.find(e => e.getId() === enemyData.id);
-      if (enemy) {
-        enemy.applyNetworkState({
-          position: enemyData.position,
-          rotation: enemyData.rotation,
-          health: enemyData.health,
-          isDead: enemyData.isDead,
-        });
-      }
-    };
-
-    // Handler for enemy death
-    this.enemyEventHandlers['enemy:died'] = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const enemyId: string = customEvent.detail;
-
-      console.log(`Enemy died: ${enemyId}`);
-
-      // Remove the enemy from the game world
-      const enemyIndex = this.enemyManager.enemies.findIndex(e => e.getId() === enemyId);
-      if (enemyIndex !== -1) {
-        const enemy = this.enemyManager.enemies[enemyIndex];
-        enemy.die();
-        this.enemyManager.enemies.splice(enemyIndex, 1);
-      }
-    };
-
-    // Register all event listeners
-    Object.keys(this.enemyEventHandlers).forEach(eventName => {
-      document.addEventListener(eventName, this.enemyEventHandlers[eventName]);
-    });
-
-    console.log('Multiplayer enemy event handlers registered');
-  }
-
-  /**
    * Cleanup method - remove event listeners
    */
   public cleanup(): void {
     window.removeEventListener('keydown', this.onKeyDown);
-
-    // Remove multiplayer enemy event listeners
-    Object.keys(this.enemyEventHandlers).forEach(eventName => {
-      document.removeEventListener(eventName, this.enemyEventHandlers[eventName]);
-    });
-    this.enemyEventHandlers = {};
-
     console.log('DevLevel cleanup completed');
   }
 }

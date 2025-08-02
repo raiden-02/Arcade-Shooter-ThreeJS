@@ -19,6 +19,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    /* Skip lib checks for Colyseus compatibility */
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+
     /* Extra (optional) */
     "forceConsistentCasingInFileNames": true
   },
