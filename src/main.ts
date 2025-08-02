@@ -3,34 +3,41 @@ import './style.css';
 import './ui.css';
 import { Engine } from './core/Engine';
 import { GameState, GameStateMachine } from './core/GameStateMachine';
+import { MultiplayerEngine } from './core/MultiplayerEngine';
 import { DevLevel } from './levels/DevLevel';
 
-// Initialize game engine
-const engine = new Engine(document.body);
-const fsm: GameStateMachine = engine.stateMachine;
+// Initialize engines (we'll use one at a time)
+let currentEngine: Engine | MultiplayerEngine | null = null;
+let currentGameMode: 'single' | 'multiplayer' | null = null;
 
-// Prepare playing scene
-const level = new DevLevel(engine);
+// Prepare level instance
+let level: DevLevel | null = null;
 
-// When entering Playing state, load the scene
-fsm.onStateChange((prev, next) => {
-  console.log(`🎮 Game state changed: ${prev} -> ${next}`);
+// Helper function to initialize engine and level
+function initializeEngine(engine: Engine | MultiplayerEngine): void {
+  const fsm: GameStateMachine = engine.stateMachine;
+  level = new DevLevel(engine);
 
-  if (
-    next === GameState.Playing &&
-    (prev === GameState.Boot || prev === GameState.MainMenu || prev === GameState.Connecting)
-  ) {
-    console.log('🚀 Loading DevLevel for Colyseus multiplayer...');
-    engine.changeScene(level);
-    console.log('✅ DevLevel loaded');
-  }
-});
+  // When entering Playing state, load the scene
+  fsm.onStateChange((prev, next) => {
+    console.log(`🎮 Game state changed: ${prev} -> ${next}`);
 
-// Start the engine loop
-engine.start();
+    if (
+      next === GameState.Playing &&
+      (prev === GameState.Boot || prev === GameState.MainMenu || prev === GameState.Connecting)
+    ) {
+      console.log('🚀 Loading DevLevel...');
+      engine.changeScene(level!);
+      console.log('DevLevel loaded');
+    }
+  });
 
-// Start with menu state
-fsm.transition(GameState.MainMenu);
+  // Start the engine loop
+  engine.start();
+
+  // Start with menu state
+  fsm.transition(GameState.MainMenu);
+}
 
 // Global debug interface for runtime testing
 declare global {
@@ -48,39 +55,106 @@ declare global {
 
 window.gameDebug = {
   startMultiplayer: async (playerName?: string) => {
-    console.log('🌐 Starting multiplayer...', playerName);
-    // Multiplayer now handled via HTML interface and Colyseus
-    console.log('Use the HTML interface buttons to connect to multiplayer');
-    return false;
+    console.log('🌐 Starting multiplayer mode...', playerName);
+
+    try {
+      // Clean up existing engine if needed
+      if (currentEngine) {
+        currentEngine.stateMachine.transition(GameState.MainMenu);
+      }
+
+      // Create multiplayer engine
+      const multiplayerEngine = new MultiplayerEngine(document.body, 'ws://localhost:3000');
+      currentEngine = multiplayerEngine;
+      currentGameMode = 'multiplayer';
+
+      // Initialize the engine
+      initializeEngine(multiplayerEngine);
+
+      // Connect to Colyseus server
+      const success = await multiplayerEngine.startMultiplayer(playerName);
+
+      if (success) {
+        console.log('✅ Multiplayer started successfully!');
+        return true;
+      } else {
+        console.error('❌ Failed to start multiplayer');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Multiplayer startup error:', error);
+      return false;
+    }
   },
 
   startSinglePlayer: () => {
-    console.log('🎮 Starting single-player...');
-    fsm.transition(GameState.Playing);
-    console.log('✅ Single-player started');
+    console.log('🎮 Starting single-player mode...');
+
+    try {
+      // Clean up existing engine if needed
+      if (currentEngine) {
+        currentEngine.stateMachine.transition(GameState.MainMenu);
+      }
+
+      // Create single-player engine
+      const singlePlayerEngine = new Engine(document.body);
+      currentEngine = singlePlayerEngine;
+      currentGameMode = 'single';
+
+      // Initialize the engine
+      initializeEngine(singlePlayerEngine);
+
+      // Start single-player directly
+      singlePlayerEngine.stateMachine.transition(GameState.Playing);
+      console.log('✅ Single-player started');
+    } catch (error) {
+      console.error('❌ Single-player startup error:', error);
+    }
   },
 
   getGameState: () => {
-    return { state: fsm.getState() };
+    if (!currentEngine) {
+      return { error: 'No engine initialized' };
+    }
+
+    const baseState = {
+      state: currentEngine.stateMachine.getState(),
+      mode: currentGameMode,
+    };
+
+    // Add multiplayer-specific info if available
+    if (currentEngine instanceof MultiplayerEngine) {
+      return {
+        ...baseState,
+        ...currentEngine.getGameState(),
+      };
+    }
+
+    return baseState;
   },
 
   showDebug: () => {
-    const state = fsm.getState();
-    console.table({ currentState: state });
+    const state = window.gameDebug.getGameState();
+    console.table(state);
     console.log('📊 Current game state:', state);
   },
 
   connectToServer: async () => {
-    console.log('🔌 Connect to server via HTML interface');
+    console.log('🔌 Use startMultiplayer() to connect to server');
     return false;
   },
 
   disconnect: () => {
-    console.log('👋 Disconnect handled via HTML interface');
+    if (currentEngine instanceof MultiplayerEngine) {
+      currentEngine.disconnect();
+      console.log('� Disconnected from server');
+    } else {
+      console.log('👋 Not connected to any server');
+    }
   },
 };
 
-console.log('🎮 Colyseus FPS Game - Architecture Migration Complete!');
+console.log('🎮 Colyseus FPS Game - Ready!');
 console.log('📋 Available Commands:');
 console.log('  - window.gameDebug.startMultiplayer("PlayerName") - Start multiplayer');
 console.log('  - window.gameDebug.startSinglePlayer() - Start single-player');
@@ -88,3 +162,4 @@ console.log('  - window.gameDebug.getGameState() - Get current state');
 console.log('  - window.gameDebug.showDebug() - Show debug info');
 console.log('  - window.gameDebug.disconnect() - Disconnect from server');
 console.log('🌐 Server expected at: ws://localhost:3000');
+console.log('🔴 Click the buttons in the browser to start playing!');
