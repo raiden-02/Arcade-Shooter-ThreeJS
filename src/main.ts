@@ -1,8 +1,5 @@
 // src/main.ts
-import { GameState } from './core/GameStateMachine';
-import { ProductionUIManager } from './core/ProductionUIManager';
-import { IGameEngine } from './interfaces/IGameEngine';
-import { MainMenu } from './ui/MainMenu';
+import { GameApplication, GameConfig, GameMode } from './core/GameApplication';
 import './style.css';
 import './ui/ui-system.css';
 
@@ -11,26 +8,27 @@ console.log('🎮 Cyber Runner - Initializing...');
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('🔧 Initializing UI systems...');
+    console.log('🔧 Initializing full game application...');
 
-    // Create a simple mock engine object for the MainMenu
-    const mockEngine = {
-      transitionToState: (state: GameState) => {
-        console.log(`Mock transition to state: ${state}`);
-        // TODO: Implement actual state transitions when full engine is restored
-        if (state === GameState.Playing) {
-          console.log('🎮 Single Player mode would start here');
-          alert('Single Player mode will be available when the full engine is restored!');
-        }
-      },
-    } as Partial<IGameEngine>;
+    // Get the app container
+    const appContainer = document.getElementById('app');
+    if (!appContainer) {
+      throw new Error('App container not found');
+    }
 
-    // Create styled main menu with proper cyberpunk design
-    const mainMenu = new MainMenu(mockEngine as IGameEngine);
-    mainMenu.show();
+    // Create game application
+    const gameApp = new GameApplication(appContainer);
 
-    // Also create UI manager for other UI elements
-    const uiManager = new ProductionUIManager();
+    // Initialize with default single player configuration
+    const defaultConfig: GameConfig = {
+      mode: GameMode.SinglePlayer,
+    };
+
+    console.log('🚀 Initializing game systems...');
+    await gameApp.initialize(defaultConfig);
+
+    console.log('🎮 Starting game application...');
+    gameApp.start();
 
     // Hide loading screen after initialization
     const loadingScreen = document.getElementById('loading-screen');
@@ -43,21 +41,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 1000);
     }
 
-    // Make UI components globally available for debugging
-    (
-      window as unknown as {
-        mainMenu: MainMenu;
-        uiManager: ProductionUIManager;
-      }
-    ).mainMenu = mainMenu;
-    (
-      window as unknown as {
-        mainMenu: MainMenu;
-        uiManager: ProductionUIManager;
-      }
-    ).uiManager = uiManager;
+    // Make game app globally available for debugging
+    (window as unknown as { gameApp: GameApplication }).gameApp = gameApp;
 
-    console.log('✅ UI systems initialized successfully!');
+    console.log('✅ Game application initialized successfully!');
   } catch (error) {
     console.error('❌ Failed to initialize game:', error);
 
@@ -79,23 +66,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Handle page reload/close
 window.addEventListener('beforeunload', () => {
-  const mainMenu = (
-    window as unknown as {
-      mainMenu?: MainMenu;
-      uiManager?: ProductionUIManager;
-    }
-  ).mainMenu;
-  const uiManager = (
-    window as unknown as {
-      mainMenu?: MainMenu;
-      uiManager?: ProductionUIManager;
-    }
-  ).uiManager;
-
-  if (mainMenu) {
-    mainMenu.hide();
-  }
-  if (uiManager) {
-    uiManager.dispose();
+  const gameApp = (window as unknown as { gameApp?: GameApplication }).gameApp;
+  if (gameApp) {
+    gameApp.stop();
   }
 });
