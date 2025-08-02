@@ -161,30 +161,51 @@ export class GameRoom extends Room<GameState> {
   onJoin(client: Client, options: PlayerJoinOptions): void {
     console.log(`👤 Player ${client.sessionId} joined`);
 
-    const player = new PlayerState();
-    player.id = client.sessionId;
-    player.name = options.playerName || `Player_${client.sessionId.substr(-6)}`;
+    // Validate client session
+    if (!client.sessionId) {
+      console.error('❌ Invalid client session ID');
+      return;
+    }
 
-    // Set spawn position
+    const player = new PlayerState();
+    
+    // Ensure all properties are properly initialized
+    player.id = String(client.sessionId);
+    player.name = String(options.playerName || `Player_${client.sessionId.substr(-6)}`);
+    player.hp = Number(100);
+    player.maxHp = Number(100);
+    player.alive = Boolean(true);
+    player.weapon = String('pistol');
+    player.kills = Number(0);
+    player.deaths = Number(0);
+    player.yaw = Number(0);
+    player.pitch = Number(0);
+
+    // Set spawn position with validation
     const spawnIndex = this.state.players.size % this.spawnPoints.length;
     const spawn = this.spawnPoints[spawnIndex];
-    player.x = spawn.x;
-    player.y = spawn.y;
-    player.z = spawn.z;
+    player.x = Number(spawn.x) || 0;
+    player.y = Number(spawn.y) || 2;
+    player.z = Number(spawn.z) || 0;
 
-    this.state.players.set(client.sessionId, player);
-    this.inputs.set(client.sessionId, {
-      seq: 0,
-      dt: 0,
-      moveX: 0,
-      moveZ: 0,
-      lookYaw: 0,
-      lookPitch: 0,
-      buttons: 0,
-      timestamp: Date.now(),
-    });
+    // Validate player before adding to state
+    if (player.id && player.name && typeof player.x === 'number' && typeof player.y === 'number' && typeof player.z === 'number') {
+      this.state.players.set(client.sessionId, player);
+      this.inputs.set(client.sessionId, {
+        seq: 0,
+        dt: 0,
+        moveX: 0,
+        moveZ: 0,
+        lookYaw: 0,
+        lookPitch: 0,
+        buttons: 0,
+        timestamp: Date.now(),
+      });
 
-    console.log(`✨ Player ${player.name} spawned at (${player.x}, ${player.y}, ${player.z})`);
+      console.log(`✨ Player ${player.name} spawned at (${player.x}, ${player.y}, ${player.z})`);
+    } else {
+      console.error('❌ Failed to create valid player state:', player);
+    }
   }
 
   onLeave(client: Client): void {
@@ -376,47 +397,75 @@ export class GameRoom extends Room<GameState> {
 
   // Authoritative projectile spawning (section 2.4.2)
   private spawnProjectile(player: PlayerState): void {
+    // Validate player state before creating projectile
+    if (!player || !player.id || typeof player.x !== 'number' || typeof player.y !== 'number' || typeof player.z !== 'number') {
+      console.error('❌ Invalid player state for projectile spawn:', player);
+      return;
+    }
+
     const proj = new ProjectileState();
-    proj.id = `${player.id}_${this.state.tick}`;
-    proj.x = player.x;
-    proj.y = player.y + 1.4; // Eye height
-    proj.z = player.z;
+    
+    // Ensure all properties are properly initialized
+    proj.id = `${player.id}_${this.state.tick}` || `unknown_${Date.now()}`;
+    proj.x = Number(player.x) || 0;
+    proj.y = Number(player.y + 1.4) || 2; // Eye height
+    proj.z = Number(player.z) || 0;
 
-    // Calculate direction from yaw and pitch
-    proj.dirX = -Math.sin(player.yaw) * Math.cos(player.pitch);
-    proj.dirY = -Math.sin(player.pitch);
-    proj.dirZ = -Math.cos(player.yaw) * Math.cos(player.pitch);
+    // Calculate direction from yaw and pitch with fallbacks
+    const yaw = Number(player.yaw) || 0;
+    const pitch = Number(player.pitch) || 0;
+    
+    proj.dirX = Number(-Math.sin(yaw) * Math.cos(pitch)) || 0;
+    proj.dirY = Number(-Math.sin(pitch)) || 0;
+    proj.dirZ = Number(-Math.cos(yaw) * Math.cos(pitch)) || -1;
 
-    proj.ownerId = player.id;
-    proj.weaponType = player.weapon;
-    proj.damage = this.getWeaponDamage(player.weapon);
-    proj.speed = PROJECTILE_SPEED;
+    proj.ownerId = String(player.id) || 'unknown';
+    proj.weaponType = String(player.weapon) || 'pistol';
+    proj.damage = Number(this.getWeaponDamage(player.weapon)) || 20;
+    proj.speed = Number(PROJECTILE_SPEED) || 30;
 
-    this.state.projectiles.push(proj);
+    // Validate all properties before adding
+    if (proj.id && typeof proj.x === 'number' && typeof proj.y === 'number' && typeof proj.z === 'number') {
+      this.state.projectiles.push(proj);
 
-    // Store projectile metadata
-    this.projectileData.set(proj.id, {
-      id: proj.id,
-      spawnTick: this.state.tick,
-      lastPosition: { x: proj.x, y: proj.y, z: proj.z },
-    });
+      // Store projectile metadata
+      this.projectileData.set(proj.id, {
+        id: proj.id,
+        spawnTick: this.state.tick,
+        lastPosition: { x: proj.x, y: proj.y, z: proj.z },
+      });
 
-    console.log(`🔫 Player ${player.name} fired ${player.weapon}`);
+      console.log(`🔫 Player ${player.name} fired ${player.weapon}`);
+    } else {
+      console.error('❌ Failed to create valid projectile:', proj);
+    }
   }
 
   // Authoritative damage system (section 2.4.3)
   private damagePlayer(player: PlayerState, projectile: ProjectileState): void {
+    // Validate inputs
+    if (!player || !projectile || typeof projectile.damage !== 'number') {
+      console.error('❌ Invalid damage parameters:', { player: !!player, projectile: !!projectile });
+      return;
+    }
+
     player.hp = Math.max(0, player.hp - projectile.damage);
 
-    // Create hit event (section 2.4.3)
+    // Create hit event (section 2.4.3) with proper validation
     const hitEvent = new HitEvent();
-    hitEvent.type = 'player_hit';
-    hitEvent.victimId = player.id;
-    hitEvent.attackerId = projectile.ownerId;
-    hitEvent.damage = projectile.damage;
-    hitEvent.weaponType = projectile.weaponType;
-    hitEvent.timestamp = Date.now();
-    this.state.events.push(hitEvent);
+    hitEvent.type = String('player_hit');
+    hitEvent.victimId = String(player.id) || 'unknown';
+    hitEvent.attackerId = String(projectile.ownerId) || 'unknown';
+    hitEvent.damage = Number(projectile.damage) || 0;
+    hitEvent.weaponType = String(projectile.weaponType) || 'unknown';
+    hitEvent.timestamp = Number(Date.now());
+    
+    // Only add event if all properties are valid
+    if (hitEvent.type && hitEvent.victimId && hitEvent.attackerId && typeof hitEvent.damage === 'number' && typeof hitEvent.timestamp === 'number') {
+      this.state.events.push(hitEvent);
+    } else {
+      console.error('❌ Failed to create valid hit event:', hitEvent);
+    }
 
     if (player.hp <= 0 && player.alive) {
       player.alive = false;
