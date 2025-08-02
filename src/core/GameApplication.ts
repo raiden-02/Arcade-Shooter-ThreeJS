@@ -55,7 +55,9 @@ export class GameApplication {
 
       // Load initial scene
       this.currentScene = new DevLevel();
-      await this.engine.loadScene(this.currentScene);
+      if (this.currentScene) {
+        await this.engine.loadScene(this.currentScene);
+      }
 
       // Set up game state transitions
       this.setupGameStateHandlers();
