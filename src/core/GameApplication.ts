@@ -1,12 +1,12 @@
 // src/core/GameApplication.ts
-import * as THREE from 'three';
-
 import { IGameEngine } from '../interfaces/IGameEngine';
 import { IScene } from '../interfaces/IScene';
 import { IUIManager } from '../interfaces/IUIManager';
 
+import { ColyseusNetworkAdapter } from './ColyseusNetworkAdapter';
 import { GameState } from './GameStateMachine';
 import { GameUIManager } from './GameUIManager';
+import { SinglePlayerEngine } from './SinglePlayerEngine';
 
 export enum GameMode {
   SinglePlayer = 'singleplayer',
@@ -114,8 +114,16 @@ export class GameApplication {
    */
   public async startSinglePlayer(): Promise<void> {
     if (!this.engine) {
-      const config: GameConfig = { mode: GameMode.SinglePlayer };
+      const config: GameConfig = { mode: GameMode.SinglePlayer, serverUrl: 'ws://localhost:3000' };
       await this.initialize(config);
+    }
+
+    if (this.engine?.networkManager) {
+      const sessionId = await this.engine.networkManager.createSession('local-session', 1);
+      await this.engine.networkManager.joinSession(
+        sessionId,
+        this.gameConfig?.playerName || 'Player',
+      );
     }
 
     this.engine!.transitionToState(GameState.Playing);
@@ -204,210 +212,14 @@ export class GameApplication {
   private async createEngine(config: GameConfig): Promise<IGameEngine> {
     console.log('🔧 Creating engine for mode:', config.mode);
 
-    if (config.mode === GameMode.Multiplayer) {
-      // Create multiplayer engine with connectToServer method
-      const multiplayerEngine: IGameEngine & { connectToServer: () => Promise<void> } = {
-        inputManager: {
-          setSensitivity: () => {},
-          setInvertY: () => {},
-          getCurrentInput: () => ({
-            moveForward: false,
-            moveBackward: false,
-            moveLeft: false,
-            moveRight: false,
-            jump: false,
-            fire: false,
-            reload: false,
-            mouseDeltaX: 0,
-            mouseDeltaY: 0,
-          }),
-          isKeyPressed: () => false,
-          getMouseDelta: () => ({ x: 0, y: 0 }),
-          onKeyDown: () => {},
-          onKeyUp: () => {},
-          onMouseMove: () => {},
-          enable: () => {},
-          disable: () => {},
-          update: () => {},
-        },
-        physicsWorld: {
-          setGravity: () => {},
-          step: () => {},
-          addRigidBody: () => {},
-          removeRigidBody: () => {},
-          updateRigidBody: () => {},
-          raycast: () => ({
-            hasCollision: false,
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-          }),
-          sphereCast: () => ({
-            hasCollision: false,
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-          }),
-          checkCollision: () => false,
-          getOverlappingBodies: () => [],
-          dispose: () => {},
-        },
-        networkManager: {
-          connect: async () => true,
-          disconnect: () => {},
-          isConnected: () => true,
-          createSession: async (sessionName: string, maxPlayers: number) => {
-            const sessionId = `SESSION_${Date.now().toString().slice(-6)}`;
-            console.log(`✅ Created session: ${sessionId} (${sessionName}, ${maxPlayers} players)`);
-            setTimeout(() => {
-              if (this.uiManager) {
-                this.uiManager.displaySessionId(sessionId);
-              }
-            }, 1000);
-            return sessionId;
-          },
-          joinSession: async (sessionId: string, playerName: string) => {
-            console.log(`✅ Joined session: ${sessionId} as ${playerName}`);
-            return true;
-          },
-          leaveSession: () => {},
-          getLocalPlayerId: () => 'player-123',
-          getLocalPlayerName: () => 'Player',
-          sendPlayerState: () => {},
-          sendGameAction: () => {},
-          onGameStateUpdate: () => {},
-          onPlayerJoined: () => {},
-          onPlayerLeft: () => {},
-          onGameAction: () => {},
-          getCurrentGameState: () => null,
-          getSessionId: () => `SESSION_${Date.now().toString().slice(-6)}`,
-        },
-
-        loadScene: async (scene: IScene) => {
-          console.log(`📋 Loading scene: ${scene.name}`);
-          this.currentScene = scene;
-          await scene.initialize(multiplayerEngine);
-        },
-
-        getCurrentScene: () => this.currentScene,
-        getCurrentState: () => GameState.MainMenu,
-
-        transitionToState: (state: GameState) => {
-          console.log(`🔄 Transitioning to state: ${state}`);
-          if (this.uiManager) {
-            this.uiManager.handleGameStateChange(GameState.MainMenu, state);
-          }
-        },
-
-        start: () => {
-          console.log(`🚀 Multiplayer engine started`);
-        },
-
-        stop: () => {
-          console.log('⏸️ Multiplayer engine stopped');
-        },
-
-        update: (deltaTime: number) => {
-          void deltaTime;
-        },
-
-        isMultiplayer: () => true,
-        getPlayerId: () => 'player-123',
-
-        // Add the connectToServer method that MainMenu checks for
-        connectToServer: async () => {
-          console.log('🌐 Connecting to Colyseus server at ws://localhost:3000');
-          // TODO: Implement actual Colyseus connection
-        },
-      };
-
-      console.log('✅ Multiplayer engine created');
-      return multiplayerEngine;
-    } else {
-      // Create single player engine
-      const singlePlayerEngine: IGameEngine = {
-        inputManager: {
-          setSensitivity: () => {},
-          setInvertY: () => {},
-          getCurrentInput: () => ({
-            moveForward: false,
-            moveBackward: false,
-            moveLeft: false,
-            moveRight: false,
-            jump: false,
-            fire: false,
-            reload: false,
-            mouseDeltaX: 0,
-            mouseDeltaY: 0,
-          }),
-          isKeyPressed: () => false,
-          getMouseDelta: () => ({ x: 0, y: 0 }),
-          onKeyDown: () => {},
-          onKeyUp: () => {},
-          onMouseMove: () => {},
-          enable: () => {},
-          disable: () => {},
-          update: () => {},
-        },
-        physicsWorld: {
-          setGravity: () => {},
-          step: () => {},
-          addRigidBody: () => {},
-          removeRigidBody: () => {},
-          updateRigidBody: () => {},
-          raycast: () => ({
-            hasCollision: false,
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-          }),
-          sphereCast: () => ({
-            hasCollision: false,
-            point: new THREE.Vector3(),
-            normal: new THREE.Vector3(),
-            distance: 0,
-          }),
-          checkCollision: () => false,
-          getOverlappingBodies: () => [],
-          dispose: () => {},
-        },
-        networkManager: undefined,
-
-        loadScene: async (scene: IScene) => {
-          console.log(`📋 Loading scene: ${scene.name}`);
-          this.currentScene = scene;
-          await scene.initialize(singlePlayerEngine);
-        },
-
-        getCurrentScene: () => this.currentScene,
-        getCurrentState: () => GameState.MainMenu,
-
-        transitionToState: (state: GameState) => {
-          console.log(`🔄 Transitioning to state: ${state}`);
-          if (this.uiManager) {
-            this.uiManager.handleGameStateChange(GameState.MainMenu, state);
-          }
-        },
-
-        start: () => {
-          console.log(`🚀 Single player engine started`);
-        },
-
-        stop: () => {
-          console.log('⏸️ Single player engine stopped');
-        },
-
-        update: (deltaTime: number) => {
-          void deltaTime;
-        },
-
-        isMultiplayer: () => false,
-        getPlayerId: () => 'local-player',
-      };
-
-      console.log('✅ Single player engine created');
-      return singlePlayerEngine;
-    }
+    const network = new ColyseusNetworkAdapter(config.serverUrl ?? 'ws://localhost:3000');
+    const engine = new SinglePlayerEngine(
+      this.container,
+      network,
+      config.mode === GameMode.Multiplayer,
+    );
+    console.log('✅ Engine created');
+    return engine;
   }
 
   /**

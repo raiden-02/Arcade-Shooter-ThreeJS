@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 import { IGameEngine } from '../interfaces/IGameEngine';
 import { IInputManager } from '../interfaces/IInputManager';
+import { INetworkManager } from '../interfaces/INetworkManager';
 import { IPhysicsWorld } from '../interfaces/IPhysicsWorld';
 import { IScene } from '../interfaces/IScene';
 
@@ -25,13 +26,19 @@ export class SinglePlayerEngine implements IGameEngine {
   public readonly inputManager: IInputManager;
   public readonly physicsWorld: IPhysicsWorld;
   public readonly settingsService: SettingsService;
+  public readonly networkManager?: INetworkManager;
+  private multiplayer: boolean;
   private stateMachine: GameStateMachine;
 
   // Scene management
   private currentScene: IScene | null = null;
   private isRunning: boolean = false;
 
-  constructor(container: HTMLElement) {
+  constructor(
+    container: HTMLElement,
+    networkManager?: INetworkManager,
+    multiplayer: boolean = false,
+  ) {
     // Initialize Three.js
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -52,6 +59,8 @@ export class SinglePlayerEngine implements IGameEngine {
     this.settingsService = new SettingsService();
     this.inputManager = new ProductionInputManager();
     this.physicsWorld = new ProductionPhysicsWorld();
+    this.networkManager = networkManager;
+    this.multiplayer = multiplayer;
     this.stateMachine = new GameStateMachine();
 
     // Set up camera
@@ -117,11 +126,11 @@ export class SinglePlayerEngine implements IGameEngine {
   }
 
   public isMultiplayer(): boolean {
-    return false;
+    return this.multiplayer;
   }
 
   public getPlayerId(): string | null {
-    return 'local-player';
+    return this.networkManager?.getLocalPlayerId() ?? 'local-player';
   }
 
   // Additional methods for Three.js integration
