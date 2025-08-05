@@ -1,4 +1,6 @@
 // src/core/GameApplication.ts
+import * as THREE from 'three';
+
 import { IGameEngine } from '../interfaces/IGameEngine';
 import { IScene } from '../interfaces/IScene';
 import { IUIManager } from '../interfaces/IUIManager';
@@ -205,9 +207,55 @@ export class GameApplication {
     if (config.mode === GameMode.Multiplayer) {
       // Create multiplayer engine with connectToServer method
       const multiplayerEngine: IGameEngine & { connectToServer: () => Promise<void> } = {
-        inputManager: {} as any,
-        physicsWorld: {} as any,
+        inputManager: {
+          setSensitivity: () => {},
+          setInvertY: () => {},
+          getCurrentInput: () => ({
+            moveForward: false,
+            moveBackward: false,
+            moveLeft: false,
+            moveRight: false,
+            jump: false,
+            fire: false,
+            reload: false,
+            mouseDeltaX: 0,
+            mouseDeltaY: 0,
+          }),
+          isKeyPressed: () => false,
+          getMouseDelta: () => ({ x: 0, y: 0 }),
+          onKeyDown: () => {},
+          onKeyUp: () => {},
+          onMouseMove: () => {},
+          enable: () => {},
+          disable: () => {},
+          update: () => {},
+        },
+        physicsWorld: {
+          setGravity: () => {},
+          step: () => {},
+          addRigidBody: () => {},
+          removeRigidBody: () => {},
+          updateRigidBody: () => {},
+          raycast: () => ({
+            hasCollision: false,
+            point: new THREE.Vector3(),
+            normal: new THREE.Vector3(),
+            distance: 0,
+          }),
+          sphereCast: () => ({
+            hasCollision: false,
+            point: new THREE.Vector3(),
+            normal: new THREE.Vector3(),
+            distance: 0,
+          }),
+          checkCollision: () => false,
+          getOverlappingBodies: () => [],
+          dispose: () => {},
+        },
         networkManager: {
+          connect: async () => true,
+          disconnect: () => {},
+          isConnected: () => true,
           createSession: async (sessionName: string, maxPlayers: number) => {
             const sessionId = `SESSION_${Date.now().toString().slice(-6)}`;
             console.log(`✅ Created session: ${sessionId} (${sessionName}, ${maxPlayers} players)`);
@@ -222,10 +270,18 @@ export class GameApplication {
             console.log(`✅ Joined session: ${sessionId} as ${playerName}`);
             return true;
           },
-          getCurrentSessionId: () => `SESSION_${Date.now().toString().slice(-6)}`,
-          isConnected: () => true,
-          getConnectionStatus: () => 'Connected',
-        } as any,
+          leaveSession: () => {},
+          getLocalPlayerId: () => 'player-123',
+          getLocalPlayerName: () => 'Player',
+          sendPlayerState: () => {},
+          sendGameAction: () => {},
+          onGameStateUpdate: () => {},
+          onPlayerJoined: () => {},
+          onPlayerLeft: () => {},
+          onGameAction: () => {},
+          getCurrentGameState: () => null,
+          getSessionId: () => `SESSION_${Date.now().toString().slice(-6)}`,
+        },
 
         loadScene: async (scene: IScene) => {
           console.log(`📋 Loading scene: ${scene.name}`);
@@ -270,8 +326,51 @@ export class GameApplication {
     } else {
       // Create single player engine
       const singlePlayerEngine: IGameEngine = {
-        inputManager: {} as any,
-        physicsWorld: {} as any,
+        inputManager: {
+          setSensitivity: () => {},
+          setInvertY: () => {},
+          getCurrentInput: () => ({
+            moveForward: false,
+            moveBackward: false,
+            moveLeft: false,
+            moveRight: false,
+            jump: false,
+            fire: false,
+            reload: false,
+            mouseDeltaX: 0,
+            mouseDeltaY: 0,
+          }),
+          isKeyPressed: () => false,
+          getMouseDelta: () => ({ x: 0, y: 0 }),
+          onKeyDown: () => {},
+          onKeyUp: () => {},
+          onMouseMove: () => {},
+          enable: () => {},
+          disable: () => {},
+          update: () => {},
+        },
+        physicsWorld: {
+          setGravity: () => {},
+          step: () => {},
+          addRigidBody: () => {},
+          removeRigidBody: () => {},
+          updateRigidBody: () => {},
+          raycast: () => ({
+            hasCollision: false,
+            point: new THREE.Vector3(),
+            normal: new THREE.Vector3(),
+            distance: 0,
+          }),
+          sphereCast: () => ({
+            hasCollision: false,
+            point: new THREE.Vector3(),
+            normal: new THREE.Vector3(),
+            distance: 0,
+          }),
+          checkCollision: () => false,
+          getOverlappingBodies: () => [],
+          dispose: () => {},
+        },
         networkManager: undefined,
 
         loadScene: async (scene: IScene) => {

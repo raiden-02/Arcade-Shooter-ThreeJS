@@ -97,7 +97,7 @@ export class GameUIManager implements IUIManager {
           const sessionIdDisplay = document.getElementById('session-id-display');
           if (sessionIdDisplay) {
             sessionIdDisplay.textContent =
-              this.engine.networkManager.getCurrentSessionId() || 'Creating...';
+              this.engine.networkManager.getSessionId() || 'Creating...';
           }
         }
       } else {
