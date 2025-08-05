@@ -87,40 +87,6 @@
 
     <script type="module" src="/src/main.ts"></script>
 
-    <script>
-      // Simple loading screen management
-      let loadingProgress = 0;
-      const progressText = document.querySelector('.loading-progress');
-      const loadingScreen = document.getElementById('loading-screen');
-
-      const loadingSteps = [
-        'Loading assets...',
-        'Initializing engine...',
-        'Setting up physics...',
-        'Preparing UI...',
-        'Ready to play!',
-      ];
-
-      function updateLoadingProgress() {
-        if (loadingProgress < loadingSteps.length - 1) {
-          progressText.textContent = loadingSteps[loadingProgress];
-          loadingProgress++;
-          setTimeout(updateLoadingProgress, 500);
-        } else {
-          progressText.textContent = loadingSteps[loadingProgress];
-          // Hide loading screen after a brief delay
-          setTimeout(() => {
-            loadingScreen.style.opacity = '0';
-            loadingScreen.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => {
-              loadingScreen.style.display = 'none';
-            }, 500);
-          }, 1000);
-        }
-      }
-
-      // Start loading progress
-      setTimeout(updateLoadingProgress, 1000);
-    </script>
+    <!-- Removed automatic loading screen management - let main.ts handle it -->
   </body>
 </html>
