@@ -165,9 +165,6 @@ async function startActualGame() {
 
     console.log('✅ Engine started');
 
-    // Request pointer lock for FPS controls
-    appContainer.requestPointerLock?.();
-
     // Make engine globally available for debugging
     (window as unknown as { engine: typeof engine }).engine = engine;
 

@@ -6,6 +6,7 @@ import { IInputManager } from '../interfaces/IInputManager';
 import { INetworkManager } from '../interfaces/INetworkManager';
 import { IPhysicsWorld } from '../interfaces/IPhysicsWorld';
 import { IScene } from '../interfaces/IScene';
+import { UIManager } from '../ui/UIManager';
 
 import { GameState, GameStateMachine } from './GameStateMachine';
 import { ProductionInputManager } from './ProductionInputManager';
@@ -27,6 +28,7 @@ export class SinglePlayerEngine implements IGameEngine {
   public readonly physicsWorld: IPhysicsWorld;
   public readonly settingsService: SettingsService;
   public readonly networkManager?: INetworkManager;
+  public readonly ui: UIManager;
   private multiplayer: boolean;
   private stateMachine: GameStateMachine;
 
@@ -49,8 +51,17 @@ export class SinglePlayerEngine implements IGameEngine {
     );
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Ensure canvas fills the screen properly
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+
     container.appendChild(this.renderer.domElement);
 
     this.clock = new THREE.Clock();
@@ -63,8 +74,14 @@ export class SinglePlayerEngine implements IGameEngine {
     this.multiplayer = multiplayer;
     this.stateMachine = new GameStateMachine();
 
+    // Initialize UI Manager
+    this.ui = new UIManager(this.settingsService, this);
+
     // Set up camera
     this.camera.position.set(0, 1.7, 5);
+
+    // Setup pointer lock for camera control
+    this.setupPointerLock();
 
     // Handle window resize
     this.setupWindowResize();
@@ -104,6 +121,10 @@ export class SinglePlayerEngine implements IGameEngine {
   public start(): void {
     console.log('Starting SinglePlayerEngine...');
     this.isRunning = true;
+
+    // Start in Playing state to show game UI and enable controls
+    this.transitionToState(GameState.Playing);
+
     this.gameLoop();
   }
 
@@ -170,6 +191,44 @@ export class SinglePlayerEngine implements IGameEngine {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
+
+  private setupPointerLock(): void {
+    // State machine UI handling
+    this.stateMachine.onStateChange((_, next) => {
+      if (next === GameState.MainMenu) {
+        this.ui.hidePause();
+        this.ui.showMainMenu();
+      } else if (next === GameState.Paused) {
+        this.ui.showPause();
+        this.ui.hideMainMenu();
+      } else if (next === GameState.Playing) {
+        this.ui.hidePause();
+        this.ui.hideMainMenu();
+        // Request pointer lock for FPS controls
+        this.renderer.domElement.requestPointerLock();
+      }
+    });
+
+    // Handle pointer lock changes
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement !== this.renderer.domElement) {
+        if (this.getCurrentState() === GameState.Playing) {
+          this.transitionToState(GameState.Paused);
+        }
+      }
+    });
+
+    // Handle escape key
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Escape') {
+        if (this.getCurrentState() !== GameState.Paused) {
+          document.exitPointerLock();
+        } else {
+          this.transitionToState(GameState.Playing);
+        }
+      }
     });
   }
 }
