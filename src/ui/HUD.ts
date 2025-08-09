@@ -5,15 +5,15 @@ export class HUD {
 
   constructor() {
     this.crosshair = document.createElement('div');
-    this.crosshair.className = 'crosshair';
+    this.crosshair.id = 'crosshair';
 
     ['top', 'left', 'right', 'bottom'].forEach(side => {
       const line = document.createElement('span');
-      line.className = `crosshair-line ${side}`;
+      line.className = `line ${side}`;
       this.crosshair.appendChild(line);
     });
     const dot = document.createElement('span');
-    dot.className = 'crosshair-dot';
+    dot.className = 'ads-dot';
     dot.style.opacity = '0';
     this.crosshair.appendChild(dot);
 
@@ -45,10 +45,10 @@ export class HUD {
    * Update crosshair line positions based on dynamic bloom (gap in pixels).
    */
   public setSpread(gapPx: number): void {
-    const top = this.crosshair.querySelector('.crosshair-line.top') as HTMLElement;
-    const bottom = this.crosshair.querySelector('.crosshair-line.bottom') as HTMLElement;
-    const left = this.crosshair.querySelector('.crosshair-line.left') as HTMLElement;
-    const right = this.crosshair.querySelector('.crosshair-line.right') as HTMLElement;
+    const top = this.crosshair.querySelector('.line.top') as HTMLElement;
+    const bottom = this.crosshair.querySelector('.line.bottom') as HTMLElement;
+    const left = this.crosshair.querySelector('.line.left') as HTMLElement;
+    const right = this.crosshair.querySelector('.line.right') as HTMLElement;
     this.lastSpreadPx = gapPx;
     top.style.top = `${-gapPx}px`;
     bottom.style.bottom = `${-gapPx}px`;
@@ -72,7 +72,7 @@ export class HUD {
    * @param progress 0=hip-fire, 1=ADS
    */
   public setADSProgress(progress: number): void {
-    const lines = this.crosshair.querySelectorAll('.crosshair-line') as NodeListOf<HTMLElement>;
+    const lines = this.crosshair.querySelectorAll('.line') as NodeListOf<HTMLElement>;
     lines.forEach(line => {
       const gap = this.lastSpreadPx * (1 - progress);
       if (line.classList.contains('top')) line.style.top = `${-gap}px`;
@@ -81,7 +81,7 @@ export class HUD {
       if (line.classList.contains('right')) line.style.right = `${-gap}px`;
       line.style.opacity = `${1 - progress}`;
     });
-    const dot = this.crosshair.querySelector('.crosshair-dot') as HTMLElement;
+    const dot = this.crosshair.querySelector('.ads-dot') as HTMLElement;
     dot.style.opacity = `${progress}`;
   }
 }

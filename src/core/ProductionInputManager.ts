@@ -51,6 +51,11 @@ export class ProductionInputManager implements IInputManager {
     return { ...this.mouseDelta };
   }
 
+  public resetMouseDelta(): void {
+    this.mouseDelta.x = 0;
+    this.mouseDelta.y = 0;
+  }
+
   public onKeyDown(callback: (key: string) => void): void {
     this.keyDownCallbacks.push(callback);
   }
@@ -75,9 +80,8 @@ export class ProductionInputManager implements IInputManager {
   }
 
   public update(): void {
-    // Reset mouse delta after each frame
-    this.mouseDelta.x = 0;
-    this.mouseDelta.y = 0;
+    // Don't reset mouse delta here - it should be done after mouse look processing
+    // Mouse delta will be reset by the consuming code after use
   }
 
   private setupEventListeners(): void {
@@ -111,18 +115,30 @@ export class ProductionInputManager implements IInputManager {
     document.addEventListener('mousedown', event => {
       if (!this.isEnabled) return;
 
+      // Map mouse buttons: 0=left, 1=middle, 2=right
       const key =
         event.button === 0 ? 'MouseLeft' : event.button === 1 ? 'MouseMiddle' : 'MouseRight';
+
+      // Also add alternative names for compatibility
+      const altKey = event.button === 0 ? 'Mouse0' : event.button === 1 ? 'Mouse1' : 'Mouse2';
+
       this.keysPressed.add(key);
+      this.keysPressed.add(altKey);
       this.keyDownCallbacks.forEach(callback => callback(key));
     });
 
     document.addEventListener('mouseup', event => {
       if (!this.isEnabled) return;
 
+      // Map mouse buttons: 0=left, 1=middle, 2=right
       const key =
         event.button === 0 ? 'MouseLeft' : event.button === 1 ? 'MouseMiddle' : 'MouseRight';
+
+      // Also remove alternative names for compatibility
+      const altKey = event.button === 0 ? 'Mouse0' : event.button === 1 ? 'Mouse1' : 'Mouse2';
+
       this.keysPressed.delete(key);
+      this.keysPressed.delete(altKey);
       this.keyUpCallbacks.forEach(callback => callback(key));
     });
 
@@ -132,6 +148,9 @@ export class ProductionInputManager implements IInputManager {
         this.keysPressed.delete('MouseLeft');
         this.keysPressed.delete('MouseRight');
         this.keysPressed.delete('MouseMiddle');
+        this.keysPressed.delete('Mouse0');
+        this.keysPressed.delete('Mouse1');
+        this.keysPressed.delete('Mouse2');
       }
     });
   }

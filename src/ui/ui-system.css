@@ -194,7 +194,7 @@
 }
 
 /* Crosshair */
-.crosshair {
+#crosshair {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -204,7 +204,7 @@
   z-index: 100;
 }
 
-.crosshair-dot {
+.ads-dot {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -215,38 +215,38 @@
   box-shadow: 0 0 4px var(--cyber-green);
 }
 
-.crosshair-line {
+.line {
   position: absolute;
   background: var(--cyber-green);
   box-shadow: 0 0 2px var(--cyber-green);
 }
 
-.crosshair-line.top,
-.crosshair-line.bottom {
+.line.top,
+.line.bottom {
   width: 2px;
   height: 8px;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.crosshair-line.left,
-.crosshair-line.right {
+.line.left,
+.line.right {
   width: 8px;
   height: 2px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.crosshair-line.top {
+.line.top {
   top: 0;
 }
-.crosshair-line.bottom {
+.line.bottom {
   bottom: 0;
 }
-.crosshair-line.left {
+.line.left {
   left: 0;
 }
-.crosshair-line.right {
+.line.right {
   right: 0;
 }
 

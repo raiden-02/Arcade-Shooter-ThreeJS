@@ -55,6 +55,11 @@ export class PlayerController {
     this.rig.rotateYaw(-look.x * this.lookSpeed);
     this.rig.rotatePitch(-look.y * this.lookSpeed);
 
+    // Reset mouse delta after using it
+    if ('resetMouseDelta' in this.input) {
+      (this.input as any).resetMouseDelta();
+    }
+
     // Get current input state
     const currentInput = this.input.getCurrentInput();
 

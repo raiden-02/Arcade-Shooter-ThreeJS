@@ -270,11 +270,39 @@ export class DevLevel implements IScene {
     this.weaponView.update(deltaTime);
 
     // ADS camera adjustment (client-side only) - using right mouse button from input
+    const isAiming = this.engine.inputManager.isKeyPressed('Mouse2');
     if (this.camera instanceof THREE.PerspectiveCamera) {
-      const isAiming = this.engine.inputManager.isKeyPressed('Mouse2'); // Use correct API
       const targetFov = isAiming ? this.adsFov : this.defaultFov;
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, deltaTime * 10);
       this.camera.updateProjectionMatrix();
+    }
+
+    // Update UI systems - get access to UI Manager from engine
+    const spEngine = this.engine as unknown as {
+      ui: {
+        hud: { setSpread: (spread: number) => void; setADSProgress: (progress: number) => void };
+      };
+    };
+    if (spEngine.ui?.hud) {
+      // Update crosshair spread based on weapon accuracy and movement
+      const baseSpread = 5; // Default spread value
+      const movementInput =
+        input.moveForward || input.moveBackward || input.moveLeft || input.moveRight;
+      const movementSpread = movementInput ? 2 : 0;
+      const totalSpread = baseSpread + movementSpread;
+      spEngine.ui.hud.setSpread(totalSpread);
+
+      // Update ADS progress for crosshair transition
+      if (isAiming && this.camera instanceof THREE.PerspectiveCamera) {
+        // Calculate ADS progress - smooth transition
+        const adsProgress = Math.min(
+          1,
+          (this.defaultFov - this.camera.fov) / (this.defaultFov - this.adsFov),
+        );
+        spEngine.ui.hud.setADSProgress(adsProgress);
+      } else {
+        spEngine.ui.hud.setADSProgress(0);
+      }
     }
 
     // Handle firing using input state
