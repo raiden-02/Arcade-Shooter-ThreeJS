@@ -7,7 +7,7 @@ import parser from '@typescript-eslint/parser';
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   {
-    ignores: ['node_modules', 'dist', 'build'],
+    ignores: ['node_modules', 'dist', 'build', 'reference/**'],
   },
   {
     files: ['src/**/*.ts', 'vite.config.ts'],
