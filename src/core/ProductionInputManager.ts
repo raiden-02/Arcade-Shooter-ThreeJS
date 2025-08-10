@@ -2,8 +2,20 @@
 import { IInputManager } from '../interfaces/IInputManager';
 import { IPlayerInput } from '../interfaces/IPlayer';
 
+export enum InputAction {
+  MoveForward = 'MoveForward',
+  MoveBackward = 'MoveBackward',
+  MoveLeft = 'MoveLeft',
+  MoveRight = 'MoveRight',
+  Jump = 'Jump',
+  Sprint = 'Sprint',
+  Fire = 'Fire',
+  Aim = 'Aim',
+  Reload = 'Reload',
+}
+
 /**
- * Production-quality input manager
+ * Production-quality input manager with action-based input
  */
 export class ProductionInputManager implements IInputManager {
   private keysPressed: Set<string> = new Set();
@@ -11,6 +23,22 @@ export class ProductionInputManager implements IInputManager {
   private sensitivity: number = 1.0;
   private invertY: boolean = false;
   private isEnabled: boolean = true;
+
+  // Action bindings - map actions to key codes
+  private keyBindings: Map<InputAction, string[]> = new Map([
+    [InputAction.MoveForward, ['KeyW']],
+    [InputAction.MoveBackward, ['KeyS']],
+    [InputAction.MoveLeft, ['KeyA']],
+    [InputAction.MoveRight, ['KeyD']],
+    [InputAction.Jump, ['Space']],
+    [InputAction.Sprint, ['ShiftLeft', 'ShiftRight']],
+    [InputAction.Reload, ['KeyR']],
+  ]);
+
+  private buttonBindings: Map<InputAction, string[]> = new Map([
+    [InputAction.Fire, ['MouseLeft', 'Mouse0']],
+    [InputAction.Aim, ['MouseRight', 'Mouse2']],
+  ]);
 
   // Event callbacks
   private keyDownCallbacks: Array<(key: string) => void> = [];
@@ -21,10 +49,16 @@ export class ProductionInputManager implements IInputManager {
     this.setupEventListeners();
   }
 
+  /**
+   * Set global mouse look sensitivity multiplier
+   */
   public setSensitivity(sensitivity: number): void {
     this.sensitivity = sensitivity;
   }
 
+  /**
+   * Enable/disable Y-axis inversion
+   */
   public setInvertY(invert: boolean): void {
     this.invertY = invert;
   }
@@ -54,6 +88,23 @@ export class ProductionInputManager implements IInputManager {
   public resetMouseDelta(): void {
     this.mouseDelta.x = 0;
     this.mouseDelta.y = 0;
+  }
+
+  /**
+   * Check if an action is currently pressed (action-based input)
+   */
+  public isPressed(action: InputAction): boolean {
+    // Check key bindings
+    const keys = this.keyBindings.get(action) || [];
+    for (const code of keys) {
+      if (this.keysPressed.has(code)) return true;
+    }
+    // Check button bindings
+    const buttons = this.buttonBindings.get(action) || [];
+    for (const button of buttons) {
+      if (this.keysPressed.has(button)) return true;
+    }
+    return false;
   }
 
   public onKeyDown(callback: (key: string) => void): void {

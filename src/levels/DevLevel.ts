@@ -3,8 +3,10 @@ import * as THREE from 'three';
 
 import { CollisionGroups } from '../core/CollisionGroups';
 import { PhysicsHelper } from '../core/PhysicsHelper';
+import { InputAction } from '../core/ProductionInputManager';
 import { ProjectileManager } from '../core/ProjectileManager';
 import { SkyBox } from '../core/SkyBox';
+import { WeaponOptions } from '../core/Weapon';
 import { WeaponManager } from '../core/WeaponManager';
 import { WeaponView } from '../core/WeaponView';
 import { EnemyManager } from '../enemy/EnemyManager';
@@ -38,6 +40,80 @@ export class DevLevel implements IScene {
   private wasFiring: boolean = false;
   private defaultFov!: number;
   private adsFov!: number;
+
+  /**
+   * Handle weapon switching via number keys or Q, and other debug controls.
+   */
+  private onKeyDown = (e: KeyboardEvent): void => {
+    let switched = false;
+
+    // Weapon switching with number keys (1-9)
+    if (e.code.startsWith('Digit')) {
+      const idx = parseInt(e.code.replace('Digit', ''), 10) - 1;
+      if (idx >= 0 && idx < 9) {
+        // Support up to 9 weapons
+        this.weaponManager.selectWeapon(idx);
+        switched = true;
+      }
+    }
+    // Weapon cycling with Q key
+    else if (e.code === 'KeyQ') {
+      this.weaponManager.nextWeapon();
+      switched = true;
+    }
+
+    // Handle weapon switching - update weapon view and UI
+    if (switched) {
+      const curr = this.weaponManager.getCurrentWeapon();
+      const opts = curr.getOptions();
+
+      // Update UI with new weapon info
+      const spEngine = this.engine as unknown as {
+        ui: { updateWeaponInfo: (name: string, opts: WeaponOptions) => void };
+      };
+      if (spEngine.ui?.updateWeaponInfo) {
+        spEngine.ui.updateWeaponInfo(curr.getName(), opts);
+      }
+
+      // Dispose old weapon view and create new one
+      this.weaponView.dispose();
+      const basePath = import.meta.env.BASE_URL;
+
+      // Create new weapon view with weapon-specific offsets
+      this.weaponView = new WeaponView(
+        this.player.getCamera(),
+        opts.viewOffset,
+        opts.viewRotationOffset,
+        opts.viewScale,
+      );
+
+      // Load new weapon model if available
+      if (opts.modelPath) {
+        this.weaponView.load(`${basePath}${opts.modelPath}`);
+      }
+
+      // Configure ADS offsets for the new weapon
+      const defaultOffset = opts.viewOffset?.clone() ?? new THREE.Vector3(0.3, -0.35, -0.5);
+      const defaultRot = opts.viewRotationOffset?.clone() ?? new THREE.Euler(0, Math.PI / 2, 0);
+      const adsOffset = opts.adsOffset?.clone() ?? defaultOffset.clone();
+      const adsRot = opts.adsRotationOffset?.clone() ?? defaultRot.clone();
+      const adsTime = opts.adsTransitionTime ?? 0.15;
+      this.weaponView.configureADS(adsOffset, adsRot, adsTime);
+
+      // Update ADS FOV for the new weapon
+      this.adsFov = opts.adsFov ?? this.defaultFov * 0.75;
+    }
+
+    // Debug controls for testing
+    if (e.code === 'KeyK') {
+      console.log('Debug: Taking 25 damage');
+      this.player.takeDamage(25);
+    }
+    if (e.code === 'KeyL') {
+      console.log('Debug: Taking fatal damage');
+      this.player.takeDamage(this.player.getHealth());
+    }
+  };
 
   public async initialize(engine: IGameEngine): Promise<void> {
     this.engine = engine;
@@ -232,6 +308,11 @@ export class DevLevel implements IScene {
   public update(deltaTime: number): void {
     this.elapsed += deltaTime;
 
+    // Action-based input system setup
+    const inputManager = this.engine.inputManager as unknown as {
+      isPressed: (action: InputAction) => boolean;
+    };
+
     // Update physics (client-side prediction)
     this.physics.step(deltaTime);
 
@@ -269,13 +350,17 @@ export class DevLevel implements IScene {
     // Update weapon view (client-side only)
     this.weaponView.update(deltaTime);
 
-    // ADS camera adjustment (client-side only) - using right mouse button from input
-    const isAiming = this.engine.inputManager.isKeyPressed('Mouse2');
+    // ADS camera adjustment using action-based input
+    const isAiming = inputManager.isPressed && inputManager.isPressed(InputAction.Aim);
+
     if (this.camera instanceof THREE.PerspectiveCamera) {
       const targetFov = isAiming ? this.adsFov : this.defaultFov;
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, deltaTime * 10);
       this.camera.updateProjectionMatrix();
     }
+
+    // Update weapon view ADS state
+    this.weaponView.setADS(isAiming);
 
     // Update UI systems - get access to UI Manager from engine
     const spEngine = this.engine as unknown as {
@@ -305,19 +390,24 @@ export class DevLevel implements IScene {
       }
     }
 
-    // Handle firing using input state
-    if (input.fire && !this.wasFiring) {
-      if (currentWeapon.canFire(this.elapsed)) {
-        const origin = new THREE.Vector3().copy(this.player.getPosition());
-        const direction = this.camera.getWorldDirection(new THREE.Vector3());
-        this.weaponManager.tryFire(origin, direction, this.elapsed);
-        // Note: Weapon view recoil would be handled by the weapon view system
-      }
-    }
-    this.wasFiring = input.fire;
+    // Handle firing using input state - replace with action-based input
+    const fire = inputManager.isPressed && inputManager.isPressed(InputAction.Fire);
+    const opts = currentWeapon.getOptions();
 
-    // Handle reload
-    if (input.reload) {
+    if (fire) {
+      if (opts.automatic) {
+        this.shoot();
+      } else if (!this.wasFiring) {
+        this.shoot();
+        this.wasFiring = true;
+      }
+    } else {
+      this.wasFiring = false;
+    }
+
+    // Handle reload with action-based input
+    const reload = inputManager.isPressed && inputManager.isPressed(InputAction.Reload);
+    if (reload) {
       currentWeapon.reload();
     }
   }
@@ -386,16 +476,33 @@ export class DevLevel implements IScene {
     return this.physics.world;
   }
 
-  private onKeyDown = (event: KeyboardEvent): void => {
-    // Simplified key handling - weapon switching would be handled through proper input system
-    switch (event.code) {
-      case 'KeyR':
-        // Reload would be handled through input system
-        const currentWeapon = this.weaponManager.getCurrentWeapon();
-        currentWeapon.reload();
-        break;
-    }
-  };
+  /**
+   * Fire a shot from center of screen using raycaster (proper FPS shooting)
+   */
+  private shoot(): void {
+    const weapon = this.weaponManager.getCurrentWeapon();
+    if (!weapon.canFire(this.elapsed)) return;
+
+    // Create raycaster from center of screen (0, 0) - proper FPS shooting
+    const mouse = new THREE.Vector2(0, 0);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera as THREE.PerspectiveCamera);
+
+    // Spawn projectile slightly in front of camera to avoid clipping
+    const spawnOffset = 0.5;
+    const origin = raycaster.ray.origin
+      .clone()
+      .add(raycaster.ray.direction.clone().multiplyScalar(spawnOffset));
+
+    // Direction is from the raycaster (center of screen)
+    let direction = raycaster.ray.direction.clone();
+
+    // Apply weapon spread if aiming (future enhancement)
+    // const aiming = inputManager.isPressed && inputManager.isPressed(InputAction.Aim);
+
+    // Fire the weapon
+    this.weaponManager.tryFire(origin, direction, this.elapsed);
+  }
 
   public dispose(): void {
     // Clean up resources

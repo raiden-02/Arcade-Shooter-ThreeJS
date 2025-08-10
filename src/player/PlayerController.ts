@@ -57,7 +57,7 @@ export class PlayerController {
 
     // Reset mouse delta after using it
     if ('resetMouseDelta' in this.input) {
-      (this.input as any).resetMouseDelta();
+      (this.input as { resetMouseDelta: () => void }).resetMouseDelta();
     }
 
     // Get current input state
