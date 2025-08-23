@@ -178,7 +178,7 @@ export class ColyseusNetworkManager {
       this.playerName = playerName || `Player_${Date.now().toString().slice(-6)}`;
 
       this.room = await this.client.joinOrCreate('arena', {
-        name: this.playerName,
+        playerName: this.playerName,
         gameMode: 'deathmatch',
       });
 
@@ -289,9 +289,9 @@ export class ColyseusNetworkManager {
       }
     });
 
-    // Handle player additions
-    if (this.room.state.players) {
-      this.room.state.players.onAdd = (player: SchemaPlayerState, key: string) => {
+    // Handle player additions/removals using Colyseus Schema callbacks
+    if (this.room.state.players && typeof this.room.state.players.onAdd === 'function') {
+      this.room.state.players.onAdd((player: SchemaPlayerState, key: string) => {
         if (this.onPlayerJoinCallback) {
           this.onPlayerJoinCallback({
             id: player.id || key,
@@ -309,14 +309,14 @@ export class ColyseusNetworkManager {
             deaths: player.deaths || 0,
           });
         }
-      };
-
-      // Handle player removals
-      this.room.state.players.onRemove = (_: SchemaPlayerState, key: string) => {
+      });
+    }
+    if (this.room.state.players && typeof this.room.state.players.onRemove === 'function') {
+      this.room.state.players.onRemove((_player: SchemaPlayerState, key: string) => {
         if (this.onPlayerLeaveCallback) {
           this.onPlayerLeaveCallback(key);
         }
-      };
+      });
     }
 
     // Handle room errors

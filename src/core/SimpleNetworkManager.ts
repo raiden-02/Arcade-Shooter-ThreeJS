@@ -143,4 +143,21 @@ export class SimpleNetworkManager implements INetworkManager {
   public getConnectionStatus(): string {
     return this._isConnected ? 'Connected' : 'Disconnected';
   }
+
+  // Realtime input (no-op for simple manager)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public sendInput(_input: {
+    moveX: number;
+    moveZ: number;
+    lookYaw: number;
+    lookPitch: number;
+    fire: boolean;
+    dt?: number;
+  }): void {
+    // no-op
+  }
+
+  public requestRespawn(): void {
+    // no-op
+  }
 }

@@ -17,7 +17,8 @@ export class ColyseusNetworkAdapter implements INetworkManager {
 
   async connect(serverUrl: string): Promise<boolean> {
     this.manager = new ColyseusNetworkManager(serverUrl);
-    return true;
+    // Attempt to connect and join a room immediately
+    return this.manager.connectAndJoin();
   }
 
   disconnect(): void {
@@ -83,5 +84,21 @@ export class ColyseusNetworkAdapter implements INetworkManager {
   }
   getSessionId(): string | null {
     return this.sessionId;
+  }
+
+  // Realtime input delegation
+  sendInput(input: {
+    moveX: number;
+    moveZ: number;
+    lookYaw: number;
+    lookPitch: number;
+    fire: boolean;
+    dt?: number;
+  }): void {
+    this.manager.sendInput(input);
+  }
+
+  requestRespawn(): void {
+    this.manager.requestRespawn();
   }
 }

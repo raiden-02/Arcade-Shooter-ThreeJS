@@ -254,6 +254,10 @@ export class DevLevel implements IScene {
     );
     this.projectileManager.setEnemyManager(this.enemyManager);
     this.projectileManager.setPlayer(this.player);
+    // Provide UI manager for hit markers and HUD updates where needed
+    if ((this.engine as any).ui) {
+      this.projectileManager.setUIManager((this.engine as any).ui);
+    }
 
     this.weaponManager = new WeaponManager(this.projectileManager);
 
@@ -341,7 +345,43 @@ export class DevLevel implements IScene {
 
     // Update other systems
     this.projectileManager.update(deltaTime);
+    // Drain and handle collision events after physics step
+    this.projectileManager.handleCollisions(this.physics.eventQueue);
     this.enemyManager.update(deltaTime, this.elapsed);
+
+    // Send input to server if connected (multiplayer path)
+    const net =
+      (this.engine.networkManager as unknown as {
+        isConnected?: () => boolean;
+        sendInput?: (input: {
+          moveX: number;
+          moveZ: number;
+          lookYaw: number;
+          lookPitch: number;
+          fire: boolean;
+          dt?: number;
+        }) => void;
+      }) || null;
+    if (net?.isConnected && net?.sendInput && net.isConnected()) {
+      // Build movement axes from current input for server
+      const ci = this.engine.inputManager.getCurrentInput();
+      const moveX = (ci.moveRight ? 1 : 0) + (ci.moveLeft ? -1 : 0);
+      const moveZ = (ci.moveForward ? -1 : 0) + (ci.moveBackward ? 1 : 0);
+
+      // Derive yaw/pitch from camera
+      const cam = this.player.getCamera();
+      const yaw = (cam.rotation as THREE.Euler).y;
+      const pitch = (cam.rotation as THREE.Euler).x;
+
+      net.sendInput({
+        moveX,
+        moveZ,
+        lookYaw: yaw,
+        lookPitch: pitch,
+        fire: !!(inputManager.isPressed && inputManager.isPressed(InputAction.Fire)),
+        dt: deltaTime,
+      });
+    }
 
     // Handle weapon firing and ADS using correct input API
     const input = this.engine.inputManager.getCurrentInput();

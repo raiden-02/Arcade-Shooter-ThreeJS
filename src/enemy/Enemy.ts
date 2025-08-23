@@ -88,10 +88,11 @@ export class Enemy {
     if (distSq > this.standoffDistance * this.standoffDistance) {
       chaseDir.normalize();
       const moveSpeed = 2 * delta;
-      desiredDelta = { x: chaseDir.x * moveSpeed, y: 0, z: chaseDir.z * moveSpeed };
+      // Small downward bias keeps controller grounded on slopes/edges
+      desiredDelta = { x: chaseDir.x * moveSpeed, y: -0.05 * delta, z: chaseDir.z * moveSpeed };
     } else {
-      // Hold position but maintain ground snap
-      desiredDelta = { x: 0, y: 0, z: 0 };
+      // Hold position but maintain ground snap with slight downward bias
+      desiredDelta = { x: 0, y: -0.05 * delta, z: 0 };
     }
     this.charController.computeColliderMovement(this.collider, desiredDelta);
     // Apply computed movement to collider and mesh
@@ -101,6 +102,9 @@ export class Enemy {
       prevPos.y + movement.y,
       prevPos.z + movement.z,
     );
+    // Prevent gradual sinking below the floor due to numerical drift
+    // Floor top is at y=0, capsule requires center >= radius + halfHeight = 0.5 + 0.5 = 1.0
+    if (newPos.y < 1.0) newPos.y = 1.0;
     this.collider.setTranslation(newPos);
     this.mesh.position.set(newPos.x, newPos.y, newPos.z);
 

@@ -10,8 +10,9 @@ export class PhysicsHelper {
   constructor() {
     const gravity = new RAPIER.Vector3(0, -9.81, 0);
     this.world = new RAPIER.World(gravity);
-    // Enable auto-drain so events are cleared each step
-    this.eventQueue = new RAPIER.EventQueue(true);
+    // Do not auto-drain so we can process collision events after stepping
+    // We'll explicitly drain them in the game loop via ProjectileManager.handleCollisions
+    this.eventQueue = new RAPIER.EventQueue(false);
   }
 
   step(delta: number) {

@@ -125,6 +125,18 @@ export class SinglePlayerEngine implements IGameEngine {
     // Start in Playing state to show game UI and enable controls
     this.transitionToState(GameState.Playing);
 
+    // If multiplayer is enabled and a network manager exists, connect to the server
+    const nm = this.networkManager as unknown as {
+      connect?: (url: string) => Promise<boolean>;
+      getSessionId?: () => string | null;
+    };
+    if (this.multiplayer && nm && typeof nm.connect === 'function') {
+      // Use default URL from adapter; connect returns true if ok
+      nm.connect('ws://localhost:3000').catch(err =>
+        console.warn('Network connect failed (non-fatal for SP):', err),
+      );
+    }
+
     this.gameLoop();
   }
 

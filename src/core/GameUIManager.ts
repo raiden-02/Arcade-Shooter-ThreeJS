@@ -15,7 +15,8 @@ export class GameUIManager implements IUIManager {
 
   constructor(engine: IGameEngine) {
     this.engine = engine;
-    this.mainMenu = new MainMenu(engine);
+    // Cast engine to the MainMenu's expected type to satisfy type checks; MainMenu only calls high-level app methods
+    this.mainMenu = new MainMenu(this.engine as unknown as any);
     this.createGameUI();
   }
 

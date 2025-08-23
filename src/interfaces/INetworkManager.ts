@@ -42,4 +42,15 @@ export interface INetworkManager {
   // State queries
   getCurrentGameState(): IGameState | null;
   getSessionId(): string | null;
+
+  // Realtime input (Colyseus)
+  sendInput(input: {
+    moveX: number;
+    moveZ: number;
+    lookYaw: number;
+    lookPitch: number;
+    fire: boolean;
+    dt?: number;
+  }): void;
+  requestRespawn(): void;
 }
