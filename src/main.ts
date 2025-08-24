@@ -104,8 +104,21 @@ async function initializeGame() {
     );
     console.log('🔧 Step 5: Starting with main menu...');
 
-    // Start with main menu
-    fsm.transition(GameState.MainMenu);
+    // Auto-join if roomId is present in URL (second tab convenience)
+    const params = new URLSearchParams(location.search);
+    const ridParam = params.get('roomId');
+    if (ridParam) {
+      (window as any).multiplayerOpts = {
+        mode: 'join',
+        playerName: `Player_${Date.now().toString().slice(-4)}`,
+        sessionId: ridParam,
+      };
+      console.debug('[BOOT] Auto-joining room from URL:', ridParam);
+      fsm.transition(GameState.Playing);
+    } else {
+      // Start with main menu
+      fsm.transition(GameState.MainMenu);
+    }
 
     console.log('🔧 Step 6: Hiding loading screen...');
 
@@ -147,8 +160,38 @@ async function startActualGame() {
     // Create network adapter for multiplayer support
     const networkAdapter = new ColyseusNetworkAdapter('ws://localhost:3000');
 
+    // If multiplayer options were chosen in menu, connect appropriately
+    const mp = (window as any).multiplayerOpts as
+      | { mode: 'create'; playerName: string; sessionName: string }
+      | { mode: 'join'; playerName: string; sessionId: string }
+      | undefined;
+    if (mp) {
+      const ok = await networkAdapter.connect('ws://localhost:3000');
+      if (ok) {
+        if (mp.mode === 'create') {
+          const roomId = await networkAdapter.createSession(mp.sessionName, 8, mp.playerName);
+          // Expose created room id so the user can share it if needed
+          (window as any).createdRoomId = roomId;
+          if (mp) {
+            try {
+              alert(`Session created. Share this Room ID to others:\n${roomId}`);
+            } catch {}
+          }
+          // Push roomId to URL so second tab can auto-join via copy/paste
+          try {
+            const url = new URL(location.href);
+            url.searchParams.set('roomId', roomId);
+            history.replaceState({}, '', url.toString());
+          } catch {}
+        } else if (mp.mode === 'join') {
+          const joined = await networkAdapter.joinSession(mp.sessionId, mp.playerName);
+          console.debug('[NET] join result:', joined, 'roomId:', mp.sessionId);
+        }
+      }
+    }
+
     // Initialize game engine (supports both single and multiplayer)
-    const engine = new SinglePlayerEngine(appContainer, networkAdapter, true);
+    const engine = new SinglePlayerEngine(appContainer, networkAdapter, !!mp);
 
     console.log('✅ Game engine created');
 
@@ -164,6 +207,13 @@ async function startActualGame() {
     engine.start();
 
     console.log('✅ Engine started');
+    // Set Room ID label if multiplayer
+    try {
+      const rid = (networkAdapter as any).getSessionId?.() || (window as any).createdRoomId || null;
+      if (rid && (engine as any).ui?.setRoomId) {
+        (engine as any).ui.setRoomId(rid);
+      }
+    } catch {}
 
     // Make engine globally available for debugging
     (window as unknown as { engine: typeof engine }).engine = engine;

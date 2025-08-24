@@ -1,32 +1,32 @@
-import { Schema, MapSchema, ArraySchema, type } from '@colyseus/schema';
+import { Schema, MapSchema, ArraySchema, type as colyseusType } from '@colyseus/schema';
 import { Room, Client } from 'colyseus';
 
 class PlayerState extends Schema {
-  @type('string') id: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 2;
-  @type('number') z: number = 0;
-  @type('number') yaw: number = 0;
-  @type('number') hp: number = 100;
-  @type('boolean') alive: boolean = true;
+  @colyseusType('string') id: string = '';
+  @colyseusType('number') x: number = 0;
+  @colyseusType('number') y: number = 2;
+  @colyseusType('number') z: number = 0;
+  @colyseusType('number') yaw: number = 0;
+  @colyseusType('number') hp: number = 100;
+  @colyseusType('boolean') alive: boolean = true;
 }
 
 class ProjectileState extends Schema {
-  @type('string') id: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 0;
-  @type('number') z: number = 0;
-  @type('number') dirX: number = 0;
-  @type('number') dirY: number = 0;
-  @type('number') dirZ: number = 0;
-  @type('string') ownerId: string = '';
-  @type('number') spawnTick: number = 0;
+  @colyseusType('string') id: string = '';
+  @colyseusType('number') x: number = 0;
+  @colyseusType('number') y: number = 0;
+  @colyseusType('number') z: number = 0;
+  @colyseusType('number') dirX: number = 0;
+  @colyseusType('number') dirY: number = 0;
+  @colyseusType('number') dirZ: number = 0;
+  @colyseusType('string') ownerId: string = '';
+  @colyseusType('number') spawnTick: number = 0;
 }
 
 class State extends Schema {
-  @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
-  @type([ProjectileState]) projectiles = new ArraySchema<ProjectileState>();
-  @type('number') tick: number = 0;
+  @colyseusType({ map: PlayerState }) players = new MapSchema<PlayerState>();
+  @colyseusType([ProjectileState]) projectiles = new ArraySchema<ProjectileState>();
+  @colyseusType('number') tick: number = 0;
 }
 
 // basic constants

@@ -29,11 +29,16 @@ export class SimpleNetworkManager implements INetworkManager {
   }
 
   // Session management
-  public async createSession(sessionName: string, maxPlayers: number): Promise<string> {
+  public async createSession(
+    sessionName: string,
+    maxPlayers: number,
+    playerName?: string,
+  ): Promise<string> {
     console.log(`Creating session: ${sessionName} (${maxPlayers} players)`);
 
     // Generate a simple session ID
     this.currentSessionId = `SESSION_${Date.now().toString().slice(-6)}`;
+    if (playerName) this.localPlayerName = playerName;
     this._isConnected = true;
 
     console.log(`✅ Session created: ${this.currentSessionId}`);

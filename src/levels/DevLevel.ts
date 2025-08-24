@@ -14,6 +14,7 @@ import { IGameEngine } from '../interfaces/IGameEngine';
 import { IPlayer } from '../interfaces/IPlayer';
 import { IScene } from '../interfaces/IScene';
 import { Player } from '../player/Player';
+import { NetworkPlayer } from '../player/NetworkPlayer';
 
 /**
  * Development level with skybox, obstacles, walls and enemies.
@@ -35,6 +36,11 @@ export class DevLevel implements IScene {
   private weaponView!: WeaponView;
   private enemyManager!: EnemyManager;
   private player!: Player;
+  // Multiplayer visuals
+  private netSubscribed: boolean = false;
+  private remotePlayers: Map<string, NetworkPlayer> = new Map();
+  private netProjectiles: Map<string, THREE.Mesh> = new Map();
+  private localPlayerId: string | null = null;
 
   private elapsed = 0;
   private wasFiring: boolean = false;
@@ -289,10 +295,8 @@ export class DevLevel implements IScene {
     this.defaultFov = (this.camera as THREE.PerspectiveCamera).fov;
     this.adsFov = initialOpts.adsFov ?? this.defaultFov * 0.75;
 
-    // Spawn enemies
-    this.enemyManager.spawnEnemy(new THREE.Vector3(5, 1, -5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(-5, 1, 5));
-    this.enemyManager.spawnEnemy(new THREE.Vector3(10, 1, -10));
+    // Spawn enemies only in singleplayer; in multiplayer server drives enemies
+    // Remove enemies during testing
 
     // Add key listeners
     window.addEventListener('keydown', this.onKeyDown);
@@ -347,7 +351,29 @@ export class DevLevel implements IScene {
     this.projectileManager.update(deltaTime);
     // Drain and handle collision events after physics step
     this.projectileManager.handleCollisions(this.physics.eventQueue);
-    this.enemyManager.update(deltaTime, this.elapsed);
+    // Update enemies only in singleplayer; multiplayer renders server enemies
+    if (!this.engine.networkManager?.isConnected?.()) {
+      this.enemyManager.update(deltaTime, this.elapsed);
+    }
+
+    // Subscribe to network state changes once connected
+    if (!this.netSubscribed && this.engine.networkManager?.isConnected?.()) {
+      this.netSubscribed = true;
+      this.localPlayerId = this.engine.getPlayerId();
+      console.debug('[NET] DevLevel subscribed. localId=', this.localPlayerId);
+      const nmAny = this.engine.networkManager as any;
+      const internal = nmAny?.getInternalManager?.();
+      internal?.onStateChange((state: any) => {
+        const playerCount = state?.players ? (state.players as Map<string, any>).size : 0;
+        const projCount = Array.isArray(state?.projectiles) ? state.projectiles.length : 0;
+        console.debug('[NET] onStateChange players=', playerCount, 'projectiles=', projCount);
+        // Update HUD player count
+        try {
+          (this.engine as any).ui?.setPlayerCount?.(playerCount);
+        } catch {}
+        this.applyNetworkState(state);
+      });
+    }
 
     // Send input to server if connected (multiplayer path)
     const net =
@@ -434,7 +460,9 @@ export class DevLevel implements IScene {
     const fire = inputManager.isPressed && inputManager.isPressed(InputAction.Fire);
     const opts = currentWeapon.getOptions();
 
-    if (fire) {
+    // In multiplayer, server is authoritative: don't spawn local projectiles
+    const isNet = !!this.engine.networkManager?.isConnected?.();
+    if (fire && !isNet) {
       if (opts.automatic) {
         this.shoot();
       } else if (!this.wasFiring) {
@@ -452,10 +480,74 @@ export class DevLevel implements IScene {
     }
   }
 
+  // Apply Colyseus room state to client visuals (remote players, projectiles, local health)
+  private applyNetworkState(state: any): void {
+    // Local health from server
+    if (this.localPlayerId && state.players?.has(this.localPlayerId)) {
+      const me = state.players.get(this.localPlayerId)!;
+      const spEngine = this.engine as unknown as {
+        ui?: { updateHealth: (current: number, max: number) => void };
+      };
+      spEngine.ui?.updateHealth(me.hp, me.maxHp);
+    }
+
+    // Remote players (exclude local)
+    const seen = new Set<string>();
+    if (state.players) {
+      state.players.forEach((p: any, id: string) => {
+        if (id === this.localPlayerId) return;
+        seen.add(id);
+        let np = this.remotePlayers.get(id);
+        if (!np) {
+          np = new NetworkPlayer(id, p.name, this.scene);
+          this.remotePlayers.set(id, np);
+        }
+        np.setPosition(p.x, p.y, p.z);
+      });
+    }
+    // Remove stale remotes
+    for (const [id, np] of this.remotePlayers) {
+      if (!seen.has(id)) {
+        np.dispose(this.scene);
+        this.remotePlayers.delete(id);
+      }
+    }
+
+    // Projectiles from server
+    const projSeen = new Set<string>();
+    for (const proj of state.projectiles || []) {
+      projSeen.add(proj.id);
+      let m = this.netProjectiles.get(proj.id);
+      if (!m) {
+        const g = new THREE.SphereGeometry(0.06, 8, 8);
+        const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        m = new THREE.Mesh(g, mat);
+        this.scene.add(m);
+        this.netProjectiles.set(proj.id, m);
+      }
+      m.position.set(proj.x, proj.y, proj.z);
+    }
+    for (const [id, m] of this.netProjectiles) {
+      if (!projSeen.has(id)) {
+        this.scene.remove(m);
+        m.geometry.dispose();
+        (m.material as THREE.Material).dispose();
+        this.netProjectiles.delete(id);
+      }
+    }
+
+    // Enemies removed for testing convenience
+  }
+
   public render(): void {
     // Use the player camera for rendering, not the engine's static camera
     if (this.player) {
       const playerCamera = this.player.getCamera();
+      // Update remote players smoothing
+      const dt = 1 / 60; // approximate frame dt; they internally smooth
+      for (const np of this.remotePlayers.values()) {
+        np.update(dt);
+      }
       this.renderer.render(this.scene, playerCamera);
     } else {
       // Fallback to engine camera if no player

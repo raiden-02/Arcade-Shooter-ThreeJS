@@ -124,9 +124,81 @@ export class SimpleMainMenu {
   };
 
   private onMultiplayerClick = (): void => {
-    console.log('🌐 Starting multiplayer game...');
-    // For now, also transition to playing - multiplayer connection can happen in-game
-    this.fsm.transition(GameState.Playing);
+    console.log('🌐 Multiplayer menu...');
+    // Show simple create/join dialog
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1100;`;
+    overlay.innerHTML = `
+      <div style="background:#111; border:1px solid #00ff88; padding:24px; width:480px; color:#00ff88; font-family:inherit;">
+        <h2 style="margin-top:0;">Multiplayer</h2>
+        <div style="margin-bottom:12px;">
+          <label>Player Name</label>
+          <input id="mp-name" type="text" placeholder="Neo" value="Player_${Date.now().toString().slice(-4)}" style="width:100%; padding:8px; background:#0a0a0a; color:#00ff88; border:1px solid #00ff88;"/>
+        </div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="flex:1; border:1px solid #00ff88; padding:12px;">
+            <h3>Create Session</h3>
+            <input id="mp-session-name" type="text" placeholder="my-room" style="width:100%; padding:8px; background:#0a0a0a; color:#00ff88; border:1px solid #00ff88;"/>
+            <button id="mp-create" style="margin-top:8px; width:100%; padding:10px; background:rgba(0,255,136,0.1); border:1px solid #00ff88; color:#00ff88; cursor:pointer;">Create</button>
+            <div id="mp-created" style="display:none; margin-top:8px; font-size:12px; color:#88ff88;">
+              Room ID: <span id="mp-room-id" style="user-select:text;"></span>
+              <button id="mp-copy" style="margin-left:8px; padding:4px 8px; border:1px solid #00ff88; background:transparent; color:#00ff88; cursor:pointer;">Copy</button>
+            </div>
+          </div>
+          <div style="flex:1; border:1px solid #00ff88; padding:12px;">
+            <h3>Join Session</h3>
+            <input id="mp-session-id" type="text" placeholder="session-id" style="width:100%; padding:8px; background:#0a0a0a; color:#00ff88; border:1px solid #00ff88;"/>
+            <button id="mp-join" style="margin-top:8px; width:100%; padding:10px; background:rgba(0,255,136,0.1); border:1px solid #00ff88; color:#00ff88; cursor:pointer;">Join</button>
+          </div>
+        </div>
+        <div style="margin-top:12px; text-align:right;"><button id="mp-cancel" style="padding:8px 12px; background:transparent; border:1px solid #00ff88; color:#00ff88;">Cancel</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const cleanup = () => overlay.remove();
+    const getName = () => (document.getElementById('mp-name') as HTMLInputElement)?.value?.trim();
+    const onCreate = () => {
+      const playerName = getName() || `Player_${Date.now().toString().slice(-4)}`;
+      const sessionName =
+        (document.getElementById('mp-session-name') as HTMLInputElement)?.value?.trim() ||
+        `room_${Date.now().toString().slice(-4)}`;
+      (window as any).multiplayerOpts = { mode: 'create', playerName, sessionName };
+      // Clean up overlay so the game canvas is interactive
+      cleanup();
+      this.fsm.transition(GameState.Playing);
+    };
+    const onJoin = () => {
+      const playerName = getName() || `Player_${Date.now().toString().slice(-4)}`;
+      const sessionId = (
+        document.getElementById('mp-session-id') as HTMLInputElement
+      )?.value?.trim();
+      if (!sessionId) return alert('Enter a session id to join');
+      (window as any).multiplayerOpts = { mode: 'join', playerName, sessionId };
+      cleanup();
+      this.fsm.transition(GameState.Playing);
+    };
+    overlay.querySelector('#mp-create')?.addEventListener('click', onCreate);
+    overlay.querySelector('#mp-join')?.addEventListener('click', onJoin);
+    overlay.querySelector('#mp-cancel')?.addEventListener('click', cleanup);
+    overlay.querySelector('#mp-copy')?.addEventListener('click', async () => {
+      const text =
+        (document.getElementById('mp-room-id') as HTMLSpanElement)?.textContent ||
+        (window as any).createdRoomId ||
+        '';
+      if (!text) return alert('Room ID not ready yet.');
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Copied Room ID to clipboard');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        alert('Copied Room ID to clipboard');
+      }
+    });
   };
 
   private onSettingsClick = (): void => {

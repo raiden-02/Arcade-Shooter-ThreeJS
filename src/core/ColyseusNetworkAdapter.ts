@@ -17,8 +17,8 @@ export class ColyseusNetworkAdapter implements INetworkManager {
 
   async connect(serverUrl: string): Promise<boolean> {
     this.manager = new ColyseusNetworkManager(serverUrl);
-    // Attempt to connect and join a room immediately
-    return this.manager.connectAndJoin();
+    // Only establish client connection; actual room join will be done via create/joinSession
+    return true;
   }
 
   disconnect(): void {
@@ -30,18 +30,22 @@ export class ColyseusNetworkAdapter implements INetworkManager {
     return this.manager.isConnected();
   }
 
-  async createSession(sessionName: string, maxPlayers: number): Promise<string> {
+  async createSession(
+    sessionName: string,
+    maxPlayers: number,
+    playerName?: string,
+  ): Promise<string> {
     void maxPlayers;
-    const ok = await this.manager.connectAndJoin(sessionName);
+    // Create a dedicated room and return its id; share this id to others to join
+    const ok = await this.manager.createRoom(playerName, sessionName || 'arena');
     if (ok) {
-      this.sessionId = sessionName;
+      this.sessionId = this.manager.getRoomId();
     }
     return this.sessionId || '';
   }
 
   async joinSession(sessionId: string, playerName: string): Promise<boolean> {
-    void sessionId;
-    const ok = await this.manager.connectAndJoin(playerName);
+    const ok = await this.manager.joinById(sessionId, playerName);
     if (ok) {
       this.sessionId = sessionId;
     }
@@ -84,6 +88,10 @@ export class ColyseusNetworkAdapter implements INetworkManager {
   }
   getSessionId(): string | null {
     return this.sessionId;
+  }
+  // Expose underlying manager for state subscriptions (internal use)
+  public getInternalManager(): ColyseusNetworkManager {
+    return this.manager;
   }
 
   // Realtime input delegation

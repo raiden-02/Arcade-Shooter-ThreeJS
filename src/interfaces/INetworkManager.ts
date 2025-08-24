@@ -21,7 +21,7 @@ export interface INetworkManager {
   isConnected(): boolean;
 
   // Session management
-  createSession(sessionName: string, maxPlayers: number): Promise<string>;
+  createSession(sessionName: string, maxPlayers: number, playerName?: string): Promise<string>;
   joinSession(sessionId: string, playerName: string): Promise<boolean>;
   leaveSession(): void;
 

@@ -9,12 +9,7 @@
     "preview": "vite preview",
     "server:dev": "npm run dev --prefix server",
     "lint": "eslint . --ext .ts --fix",
-    "clean-install": "rd /s /q node_modules && del /f /q package-lock.json && npm install",
     "format": "prettier --write .",
-    "lint-format": "npm run lint && npm run format",
-    "lint-format-build": "npm run lint-format && npm run build",
-    "lint-format-build-dev": "npm run lint-format && npm run build && npm run dev",
-    "build-dev": "npm run build && npm run dev",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {

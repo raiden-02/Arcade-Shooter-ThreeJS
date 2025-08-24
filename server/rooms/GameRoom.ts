@@ -1,4 +1,4 @@
-import { Schema, MapSchema, ArraySchema, type } from '@colyseus/schema';
+import { Schema, MapSchema, ArraySchema, type as colyseusType } from '@colyseus/schema';
 import { Room, Client } from 'colyseus';
 
 // Type definitions for room options and join options
@@ -15,66 +15,66 @@ interface PlayerJoinOptions {
 
 // Schema definitions (section 3.1 of architecture document)
 class PlayerState extends Schema {
-  @type('string') id: string = '';
-  @type('string') name: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 2;
-  @type('number') z: number = 0;
-  @type('number') yaw: number = 0;
-  @type('number') pitch: number = 0;
-  @type('number') hp: number = 100;
-  @type('number') maxHp: number = 100;
-  @type('boolean') alive: boolean = true;
-  @type('string') weapon: string = 'pistol';
-  @type('number') kills: number = 0;
-  @type('number') deaths: number = 0;
+  @colyseusType('string') id: string = '';
+  @colyseusType('string') name: string = '';
+  @colyseusType('number') x: number = 0;
+  @colyseusType('number') y: number = 2;
+  @colyseusType('number') z: number = 0;
+  @colyseusType('number') yaw: number = 0;
+  @colyseusType('number') pitch: number = 0;
+  @colyseusType('number') hp: number = 100;
+  @colyseusType('number') maxHp: number = 100;
+  @colyseusType('boolean') alive: boolean = true;
+  @colyseusType('string') weapon: string = 'pistol';
+  @colyseusType('number') kills: number = 0;
+  @colyseusType('number') deaths: number = 0;
 }
 
 class ProjectileState extends Schema {
-  @type('string') id: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 0;
-  @type('number') z: number = 0;
-  @type('number') dirX: number = 0;
-  @type('number') dirY: number = 0;
-  @type('number') dirZ: number = 0;
-  @type('string') ownerId: string = '';
-  @type('string') weaponType: string = 'pistol';
-  @type('number') damage: number = 20;
-  @type('number') speed: number = 30;
+  @colyseusType('string') id: string = '';
+  @colyseusType('number') x: number = 0;
+  @colyseusType('number') y: number = 0;
+  @colyseusType('number') z: number = 0;
+  @colyseusType('number') dirX: number = 0;
+  @colyseusType('number') dirY: number = 0;
+  @colyseusType('number') dirZ: number = 0;
+  @colyseusType('string') ownerId: string = '';
+  @colyseusType('string') weaponType: string = 'pistol';
+  @colyseusType('number') damage: number = 20;
+  @colyseusType('number') speed: number = 30;
 }
 
 class EnemyState extends Schema {
-  @type('string') id: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 2;
-  @type('number') z: number = 0;
-  @type('number') rotX: number = 0;
-  @type('number') rotY: number = 0;
-  @type('number') rotZ: number = 0;
-  @type('number') rotW: number = 1;
-  @type('number') hp: number = 100;
-  @type('number') maxHp: number = 100;
-  @type('boolean') alive: boolean = true;
+  @colyseusType('string') id: string = '';
+  @colyseusType('number') x: number = 0;
+  @colyseusType('number') y: number = 2;
+  @colyseusType('number') z: number = 0;
+  @colyseusType('number') rotX: number = 0;
+  @colyseusType('number') rotY: number = 0;
+  @colyseusType('number') rotZ: number = 0;
+  @colyseusType('number') rotW: number = 1;
+  @colyseusType('number') hp: number = 100;
+  @colyseusType('number') maxHp: number = 100;
+  @colyseusType('boolean') alive: boolean = true;
 }
 
 class HitEvent extends Schema {
-  @type('string') type: string = 'hit';
-  @type('string') victimId: string = '';
-  @type('string') attackerId: string = '';
-  @type('number') damage: number = 0;
-  @type('string') weaponType: string = '';
-  @type('number') timestamp: number = 0;
+  @colyseusType('string') type: string = 'hit';
+  @colyseusType('string') victimId: string = '';
+  @colyseusType('string') attackerId: string = '';
+  @colyseusType('number') damage: number = 0;
+  @colyseusType('string') weaponType: string = '';
+  @colyseusType('number') timestamp: number = 0;
 }
 
 class GameState extends Schema {
-  @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
-  @type([ProjectileState]) projectiles = new ArraySchema<ProjectileState>();
-  @type({ map: EnemyState }) enemies = new MapSchema<EnemyState>();
-  @type([HitEvent]) events = new ArraySchema<HitEvent>();
-  @type('number') tick: number = 0;
-  @type('string') gameMode: string = 'deathmatch';
-  @type('boolean') gameActive: boolean = true;
+  @colyseusType({ map: PlayerState }) players = new MapSchema<PlayerState>();
+  @colyseusType([ProjectileState]) projectiles = new ArraySchema<ProjectileState>();
+  @colyseusType({ map: EnemyState }) enemies = new MapSchema<EnemyState>();
+  @colyseusType([HitEvent]) events = new ArraySchema<HitEvent>();
+  @colyseusType('number') tick: number = 0;
+  @colyseusType('string') gameMode: string = 'deathmatch';
+  @colyseusType('boolean') gameActive: boolean = true;
 }
 
 // Input message structure (section 2.3 of architecture)

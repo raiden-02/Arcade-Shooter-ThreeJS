@@ -52,6 +52,33 @@ export class PauseMenu {
       }
     };
 
+    // Copy Room ID (multiplayer helper)
+    const copyRoomBtn = document.createElement('button');
+    copyRoomBtn.innerText = 'Copy Room ID';
+    copyRoomBtn.className = 'pause-btn';
+    copyRoomBtn.onclick = async () => {
+      const id =
+        (this.engine as any)?.networkManager?.getSessionId?.() ||
+        (window as any).createdRoomId ||
+        '';
+      if (!id) {
+        alert('No Room ID available. Are you connected to multiplayer?');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(String(id));
+        alert('Room ID copied to clipboard');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = String(id);
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        alert('Room ID copied to clipboard');
+      }
+    };
+
     // Restart button
     const reloadBtn = document.createElement('button');
     reloadBtn.innerText = 'Restart';
@@ -73,7 +100,7 @@ export class PauseMenu {
       }
     };
 
-    this.container.append(resumeBtn, settingsBtn, mainMenuBtn, reloadBtn, quitBtn);
+    this.container.append(resumeBtn, settingsBtn, copyRoomBtn, mainMenuBtn, reloadBtn, quitBtn);
   }
   public show(): void {
     this.container.style.display = 'flex';

@@ -14,6 +14,8 @@ export class UIManager {
   healthInfo: HTMLDivElement;
   ammoInfo: HTMLDivElement;
   deathScreen: HTMLDivElement;
+  roomIdInfo: HTMLDivElement;
+  playerCountInfo: HTMLDivElement;
 
   constructor(settingsService?: SettingsService, engine?: IGameEngine) {
     if (settingsService && engine) {
@@ -46,6 +48,36 @@ export class UIManager {
     this.deathScreen.id = 'death-screen';
     this.deathScreen.style.display = 'none';
     document.body.appendChild(this.deathScreen);
+
+    // Room ID (top-right)
+    this.roomIdInfo = document.createElement('div');
+    this.roomIdInfo.id = 'room-id-info';
+    this.roomIdInfo.style.cssText = `
+      position: fixed;
+      top: 8px;
+      right: 12px;
+      color: #00ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: 1000;`;
+    document.body.appendChild(this.roomIdInfo);
+
+    // Player count (top-right, under room id)
+    this.playerCountInfo = document.createElement('div');
+    this.playerCountInfo.id = 'player-count-info';
+    this.playerCountInfo.style.cssText = `
+      position: fixed;
+      top: 24px;
+      right: 12px;
+      color: #88ffcc;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: 1000;`;
+    document.body.appendChild(this.playerCountInfo);
   }
 
   showPause() {
@@ -62,6 +94,8 @@ export class UIManager {
     this.weaponInfo.style.display = 'block';
     this.healthInfo.style.display = 'block';
     this.ammoInfo.style.display = 'block';
+    this.roomIdInfo.style.display = 'block';
+    this.playerCountInfo.style.display = 'block';
   }
 
   togglePause() {
@@ -149,10 +183,27 @@ export class UIManager {
     this.weaponInfo.style.display = 'none';
     this.healthInfo.style.display = 'none';
     this.ammoInfo.style.display = 'none';
+    this.roomIdInfo.style.display = 'none';
+    this.playerCountInfo.style.display = 'none';
   }
 
   hideMainMenu() {
     // Main menu now handled via HTML interface
     console.log('Main menu hidden via HTML interface');
+  }
+
+  public setRoomId(id: string | null): void {
+    if (!id) {
+      this.roomIdInfo.textContent = '';
+      return;
+    }
+    this.roomIdInfo.textContent = `Room: ${id}`;
+    try {
+      console.debug('[UI] Room ID set to', id);
+    } catch {}
+  }
+
+  public setPlayerCount(count: number): void {
+    this.playerCountInfo.textContent = count > 0 ? `Players: ${count}` : '';
   }
 }

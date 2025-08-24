@@ -172,12 +172,12 @@ export class ColyseusNetworkManager {
     this.client = new Client(this.serverUrl);
   }
 
-  public async connectAndJoin(playerName?: string): Promise<boolean> {
+  public async connectAndJoin(playerName?: string, roomName: string = 'arena'): Promise<boolean> {
     try {
       this.connectionState = ConnectionState.CONNECTING;
       this.playerName = playerName || `Player_${Date.now().toString().slice(-6)}`;
 
-      this.room = await this.client.joinOrCreate('arena', {
+      this.room = await this.client.joinOrCreate(roomName, {
         playerName: this.playerName,
         gameMode: 'deathmatch',
       });
@@ -196,11 +196,66 @@ export class ColyseusNetworkManager {
     }
   }
 
+  public async joinById(roomId: string, playerName?: string): Promise<boolean> {
+    try {
+      this.connectionState = ConnectionState.CONNECTING;
+      this.playerName = playerName || `Player_${Date.now().toString().slice(-6)}`;
+
+      this.room = await this.client.joinById(roomId, {
+        playerName: this.playerName,
+      });
+
+      this.connectionState = ConnectionState.CONNECTED;
+      this.playerId = this.room.sessionId;
+
+      console.log(`🎮 Joined game room by id: ${this.room.roomId}, sessionId: ${this.playerId}`);
+
+      this.setupRoomEventHandlers();
+      return true;
+    } catch (err) {
+      console.error('❌ Failed to join room by id:', err);
+      this.connectionState = ConnectionState.ERROR;
+      return false;
+    }
+  }
+
+  public async createRoom(playerName?: string, sessionName?: string): Promise<boolean> {
+    try {
+      this.connectionState = ConnectionState.CONNECTING;
+      this.playerName = playerName || `Player_${Date.now().toString().slice(-6)}`;
+
+      this.room = await this.client.create('arena', {
+        playerName: this.playerName,
+        sessionName: sessionName || `room_${Date.now().toString().slice(-6)}`,
+        gameMode: 'deathmatch',
+      });
+
+      this.connectionState = ConnectionState.CONNECTED;
+      this.playerId = this.room.sessionId;
+      console.log(`🎮 Created room: ${this.room.roomId}, sessionId: ${this.playerId}`);
+
+      this.setupRoomEventHandlers();
+      return true;
+    } catch (err) {
+      console.error('❌ Failed to create room:', err);
+      this.connectionState = ConnectionState.ERROR;
+      return false;
+    }
+  }
+
   private setupRoomEventHandlers(): void {
     if (!this.room) return;
 
     // Handle room state changes (section 3.5 - listen to room.state.onChange)
     this.room.onStateChange((state: SchemaGameState) => {
+      // Lightweight instrumentation to help diagnose visibility/state issues
+      try {
+        const playersCount = (state.players as any)?.size ?? 0;
+        const projCount = (state.projectiles as any)?.length ?? 0;
+        console.debug(
+          `[NET] state@${state.tick} room=${this.room?.roomId} players=${playersCount} projectiles=${projCount}`,
+        );
+      } catch {}
       if (this.onStateChangeCallback) {
         const roomState: ColyseusRoomState = {
           players: new Map(),
@@ -292,6 +347,7 @@ export class ColyseusNetworkManager {
     // Handle player additions/removals using Colyseus Schema callbacks
     if (this.room.state.players && typeof this.room.state.players.onAdd === 'function') {
       this.room.state.players.onAdd((player: SchemaPlayerState, key: string) => {
+        console.debug('[NET] player.onAdd', key, player?.name);
         if (this.onPlayerJoinCallback) {
           this.onPlayerJoinCallback({
             id: player.id || key,
@@ -313,6 +369,7 @@ export class ColyseusNetworkManager {
     }
     if (this.room.state.players && typeof this.room.state.players.onRemove === 'function') {
       this.room.state.players.onRemove((_player: SchemaPlayerState, key: string) => {
+        console.debug('[NET] player.onRemove', key);
         if (this.onPlayerLeaveCallback) {
           this.onPlayerLeaveCallback(key);
         }
@@ -403,5 +460,9 @@ export class ColyseusNetworkManager {
 
   public isConnected(): boolean {
     return this.connectionState === ConnectionState.CONNECTED && this.room !== null;
+  }
+
+  public getRoomId(): string | null {
+    return this.room?.roomId ?? null;
   }
 }

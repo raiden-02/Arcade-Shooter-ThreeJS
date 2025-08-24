@@ -5,7 +5,7 @@ import { Server } from 'colyseus';
 import cors from 'cors';
 import express from 'express';
 
-import { GameRoom } from './rooms/GameRoom';
+import { GameRoom } from './rooms/GameRoom.js';
 
 // Express + HTTP
 const app = express();
