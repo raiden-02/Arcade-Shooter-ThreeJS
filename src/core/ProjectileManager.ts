@@ -172,10 +172,8 @@ export class ProjectileManager {
   }
 
   update(delta: number) {
-    // Update all projectile meshes from physics bodies
     this.projectiles.forEach(p => p.update(delta));
 
-    // Handle expiration for explosive and shell cleanup
     for (const projectile of this.projectiles.slice()) {
       if (!projectile.active) continue;
       if (projectile.shouldDespawn()) {

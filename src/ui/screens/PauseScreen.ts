@@ -16,12 +16,10 @@ export class PauseScreen extends UIScreen {
     this.engine = engine;
     this.settingsService = settingsService;
 
-    // Re-setup the screen now that we have the dependencies
     this.setupScreen();
   }
 
   protected setupScreen(): void {
-    // Guard against being called before dependencies are set
     if (!this.engine || !this.settingsService) {
       return;
     }
@@ -54,19 +52,16 @@ export class PauseScreen extends UIScreen {
   protected setupEventListeners(): void {
     super.setupEventListeners();
 
-    // Resume button
     const resumeBtn = this.element.querySelector('#resume-btn') as HTMLButtonElement;
     resumeBtn?.addEventListener('click', () => {
       document.dispatchEvent(new CustomEvent('ui:resumeGame'));
     });
 
-    // Settings button
     const settingsBtn = this.element.querySelector('#settings-btn') as HTMLButtonElement;
     settingsBtn?.addEventListener('click', () => {
       this.toggleSettings();
     });
 
-    // Restart button
     const restartBtn = this.element.querySelector('#restart-btn') as HTMLButtonElement;
     restartBtn?.addEventListener('click', () => {
       if (confirm('Are you sure you want to restart the level?')) {
@@ -85,13 +80,11 @@ export class PauseScreen extends UIScreen {
 
   public onEnter(): void {
     console.log('Entering Pause Menu');
-    // Show cursor
     document.body.style.cursor = 'default';
   }
 
   public onExit(): void {
     console.log('Exiting Pause Menu');
-    // Hide cursor
     document.body.style.cursor = 'none';
   }
 
@@ -122,7 +115,6 @@ export class PauseScreen extends UIScreen {
     settingsPanel.innerHTML = `
     <h3>Settings</h3>
     <div class="settings-grid">
-      <!-- Input Settings -->
       <div class="settings-section">
         <h4>Input</h4>
         <label>
@@ -135,7 +127,6 @@ export class PauseScreen extends UIScreen {
         </label>
       </div>
       
-      <!-- Graphics Settings -->
       <div class="settings-section">
         <h4>Graphics</h4>
         <label>
@@ -189,13 +180,11 @@ export class PauseScreen extends UIScreen {
       if (fovValue) fovValue.textContent = fovSlider.value;
     });
 
-    // Apply settings button
     const applyBtn = this.element.querySelector('#apply-settings') as HTMLButtonElement;
     applyBtn?.addEventListener('click', () => {
       this.applySettings();
     });
 
-    // Reset settings button
     const resetBtn = this.element.querySelector('#reset-settings') as HTMLButtonElement;
     resetBtn?.addEventListener('click', () => {
       if (confirm('Reset all settings to defaults?')) {
@@ -207,7 +196,6 @@ export class PauseScreen extends UIScreen {
   private applySettings(): void {
     const settings = this.settingsService.getSettings();
 
-    // Get values from UI
     const sensSlider = this.element.querySelector('#sens-slider') as HTMLInputElement;
     const invertYCheck = this.element.querySelector('#invert-y') as HTMLInputElement;
     const resSlider = this.element.querySelector('#res-slider') as HTMLInputElement;
@@ -215,7 +203,6 @@ export class PauseScreen extends UIScreen {
     const fullscreenCheck = this.element.querySelector('#fullscreen') as HTMLInputElement;
     const vsyncCheck = this.element.querySelector('#vsync') as HTMLInputElement;
 
-    // Update settings
     if (sensSlider) settings.input.mouseSensitivity = parseFloat(sensSlider.value);
     if (invertYCheck) settings.input.invertY = invertYCheck.checked;
     if (resSlider) settings.graphics.resolutionScale = parseFloat(resSlider.value);
@@ -223,10 +210,8 @@ export class PauseScreen extends UIScreen {
     if (fullscreenCheck) settings.graphics.fullscreen = fullscreenCheck.checked;
     if (vsyncCheck) settings.graphics.vsync = vsyncCheck.checked;
 
-    // Apply settings through services
     this.settingsService.applySettings(settings);
 
-    // Apply engine-specific settings
     this.engine.input.setSensitivity(settings.input.mouseSensitivity);
     this.engine.input.setInvertY(settings.input.invertY);
     this.engine.renderer.setPixelRatio(window.devicePixelRatio * settings.graphics.resolutionScale);
@@ -244,11 +229,9 @@ export class PauseScreen extends UIScreen {
   }
 
   private resetSettings(): void {
-    // Reset to default settings - for now just log this action
     // TODO: Implement resetToDefaults method in SettingsService
     console.log('Reset settings to defaults (not implemented yet)');
 
-    // Refresh the settings panel with current values
     this.setupSettingsPanel();
   }
 }

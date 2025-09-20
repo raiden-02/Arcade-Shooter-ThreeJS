@@ -10,7 +10,6 @@ import { UIScreen } from '../core/UIScreen';
 export class MainMenuScreen extends UIScreen {
   constructor(engine: Engine, settingsService: SettingsService) {
     super('main-menu', GameState.MainMenu, 'main-menu-screen');
-    // Store references if needed later
     void engine;
     void settingsService;
   }
@@ -46,7 +45,6 @@ export class MainMenuScreen extends UIScreen {
 
   protected setupEventListeners(): void {
     super.setupEventListeners();
-    // Don't attach events here - will be done in show() method
   }
 
   private attachButtonEvents(): void {
@@ -85,25 +83,21 @@ export class MainMenuScreen extends UIScreen {
       console.error('Play button not found! DOM might not be ready or ID mismatch');
     }
 
-    // Settings button
     const settingsBtn = this.element.querySelector('#settings-btn') as HTMLButtonElement;
     settingsBtn?.addEventListener('click', () => {
       this.showSettings();
     });
 
-    // Profile button
     const profileBtn = this.element.querySelector('#profile-btn') as HTMLButtonElement;
     profileBtn?.addEventListener('click', () => {
       this.showProfile();
     });
 
-    // Extras button
     const extrasBtn = this.element.querySelector('#extras-btn') as HTMLButtonElement;
     extrasBtn?.addEventListener('click', () => {
       this.showExtras();
     });
 
-    // Quit button
     const quitBtn = this.element.querySelector('#quit-btn') as HTMLButtonElement;
     quitBtn?.addEventListener('click', () => {
       this.quitGame();
@@ -112,23 +106,19 @@ export class MainMenuScreen extends UIScreen {
 
   public onEnter(): void {
     console.log('Entering Main Menu');
-    // Start background animations, music, etc.
   }
 
   public onExit(): void {
     console.log('Exiting Main Menu');
-    // Clean up animations, fade out music, etc.
   }
 
   public onKeyDown(event: KeyboardEvent): boolean {
     switch (event.code) {
       case 'Enter':
       case 'Space':
-        // Start game on Enter/Space
         document.dispatchEvent(new CustomEvent('ui:startGame'));
         return true;
       case 'Escape':
-        // Quit on Escape
         this.quitGame();
         return true;
     }
@@ -158,7 +148,6 @@ export class MainMenuScreen extends UIScreen {
 
   public async show(animate: boolean = true): Promise<void> {
     await super.show(animate);
-    // Re-attach events when screen is actually shown to ensure DOM is ready
     this.attachButtonEvents();
   }
 }

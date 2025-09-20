@@ -32,7 +32,6 @@ export class UIManager {
     this.gameStateMachine = engine.stateMachine;
     this.settingsService = settingsService;
 
-    // Create main UI container
     this.container = document.createElement('div');
     this.container.id = 'ui-manager';
     this.container.className = 'ui-manager';
@@ -46,7 +45,6 @@ export class UIManager {
    * Initialize all UI screens.
    */
   private initializeScreens(): void {
-    // Create screens for each game state
     this.screens.set(GameState.MainMenu, new MainMenuScreen(this.engine, this.settingsService));
 
     this.screens.set(GameState.Playing, new GameUIScreen(this.engine, this.settingsService));

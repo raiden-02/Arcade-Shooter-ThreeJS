@@ -151,7 +151,6 @@ export class DevLevel extends BaseScene {
     this.engine.camera = playerCam;
     this.camera = playerCam;
 
-    // Set up projectile and enemy systems with AI
     this.projectileManager = new ProjectileManager(this.scene, this.physics.world);
     this.enemyManager = new EnemyManager(
       this.scene,
@@ -166,8 +165,6 @@ export class DevLevel extends BaseScene {
     this.projectileManager.setPlayer(this.player);
     this.projectileManager.setUIManager(this.ui);
     this.weaponManager = new WeaponManager(this.projectileManager);
-
-    // Initialize first-person weapon view with per-weapon offsets
     const initialWeapon = this.weaponManager.getCurrentWeapon();
     const initialOpts = initialWeapon.getOptions();
     const basePath = import.meta.env.BASE_URL;

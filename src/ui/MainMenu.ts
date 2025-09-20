@@ -38,10 +38,8 @@ export class MainMenu {
       </div>
     `;
 
-    // Set up event listeners
     this.setupEventListeners();
 
-    // Add to DOM but hide initially
     document.body.appendChild(this.container);
     this.hide();
   }
@@ -131,7 +129,6 @@ export class MainMenu {
 
   public hide(): void {
     this.container.style.display = 'none';
-    // Hide settings panel when hiding main menu
     if (this.settingsPanel) {
       this.settingsPanel.hide();
     }

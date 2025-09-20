@@ -34,19 +34,15 @@ export class Engine {
   public stateMachine: GameStateMachine;
 
   constructor(container?: HTMLElement) {
-    // Settings service (load persisted settings)
     this.settingsService = new SettingsService();
-    // Scene and renderer
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // Apply user resolution scale
     const { graphics } = this.settingsService.getSettings();
     this.renderer.setPixelRatio(window.devicePixelRatio * graphics.resolutionScale);
     const mount = container ?? document.body;
     mount.appendChild(this.renderer.domElement);
 
-    // Camera (use user FOV)
     this.camera = new THREE.PerspectiveCamera(
       this.settingsService.getSettings().graphics.fov,
       window.innerWidth / window.innerHeight,
@@ -54,23 +50,17 @@ export class Engine {
       1000,
     );
 
-    // Clock
     this.clock = new THREE.Clock();
 
-    // Input
     this.input = new InputManager();
-    // Apply input settings
     const { mouseSensitivity, invertY } = this.settingsService.getSettings().input;
     this.input.setSensitivity(mouseSensitivity);
     this.input.setInvertY(invertY);
 
-    // Physics
     this.physics = new PhysicsHelper();
 
-    // UI (includes settings panel)
     this.ui = new UIManager(this.settingsService, this);
 
-    // State machine
     this.stateMachine = new GameStateMachine();
     // Tie UI and pointer lock behavior to state transitions
     this.stateMachine.onStateChange((_, next) => {
@@ -88,7 +78,6 @@ export class Engine {
       }
     });
 
-    // Skybox load from public folder
     const basePath = import.meta.env.BASE_URL;
     new SkyBox(this.renderer, this.scene, `${basePath}skybox/`);
 
@@ -104,7 +93,6 @@ export class Engine {
     // Yuka AI: entity manager for steering behaviors and state machines
     this.entityManager = new EntityManager();
 
-    // Handle resize
     window.addEventListener('resize', () => this.onWindowResize());
 
     // Pause when pointer lock is lost
@@ -149,7 +137,6 @@ export class Engine {
 
   private animate = (): void => {
     requestAnimationFrame(this.animate);
-    // Skip updates when paused
     if (this.stateMachine.getState() === GameState.Paused) {
       this.clock.getDelta();
       return;
@@ -159,7 +146,6 @@ export class Engine {
     if (this.currentScene) {
       this.currentScene.update(delta);
     }
-    // Update Yuka AI entities
     this.entityManager.update(delta);
     this.renderer.render(this.scene, this.camera);
   };

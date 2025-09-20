@@ -40,14 +40,11 @@ export class Player {
     physics: PhysicsHelper,
     spawnPos: RAPIER.Vector3 = new RAPIER.Vector3(0, 2, 0),
   ) {
-    // Store spawn position for respawn
     this.spawnPosition = spawnPos;
 
-    // Create root object and add to scene
     this.root = new THREE.Object3D();
     scene.add(this.root);
 
-    // Create and attach camera rig
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -57,13 +54,11 @@ export class Player {
     this.cameraRig = new CameraRig(this.camera);
     this.root.add(this.cameraRig.object);
 
-    // Create simple capsule model
     const geometry = new THREE.CapsuleGeometry(0.4, 1.6, 8, 16);
     const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     this.model = new THREE.Mesh(geometry, material);
     this.model.castShadow = true;
     this.root.add(this.model);
-    // Create kinematic character controller and capsule collider for player
     this.charController = physics.createCharacterController(0.1);
     const playerColliderDesc = RAPIER.ColliderDesc.capsule(0.8, 0.4)
       .setTranslation(spawnPos.x, spawnPos.y, spawnPos.z)
@@ -77,14 +72,12 @@ export class Player {
     // Optional: snap to ground to keep player on floor
     this.charController.enableSnapToGround(0.1);
 
-    // Create controller to handle input and movement
     this.controller = new PlayerController(
       this.cameraRig,
       input,
       this.charController,
       this.collider,
     );
-    // Initialize health
     this.maxHealth = 100;
     this.health = this.maxHealth;
   }
@@ -182,13 +175,10 @@ export class Player {
     this.health = this.maxHealth;
     this.respawnTimer = 0;
 
-    // Reset collider position to spawn position
     this.collider.setTranslation(this.spawnPosition);
 
-    // Show the model again
     this.model.visible = true;
 
-    // Reset camera orientation
     this.cameraRig.object.rotation.set(0, 0, 0);
   }
 

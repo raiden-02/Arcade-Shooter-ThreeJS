@@ -12,7 +12,6 @@ export class SettingsPanel {
     this.engine = engine;
     this.container = this.createSettingsPanel();
 
-    // Add to DOM
     document.body.appendChild(this.container);
   }
 
@@ -21,7 +20,6 @@ export class SettingsPanel {
     panel.className = 'settings-panel';
     panel.style.display = 'none';
 
-    // Input settings
     const inputCfg = this.settingsService.getSettings().input;
 
     // Mouse Sensitivity
@@ -71,7 +69,6 @@ export class SettingsPanel {
     invertContainer.appendChild(invertLabel);
     invertContainer.appendChild(invertCheck);
 
-    // Graphics settings
     const graphicsCfg = this.settingsService.getSettings().graphics;
 
     // FOV

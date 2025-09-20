@@ -96,7 +96,6 @@ export class GameUIScreen extends UIScreen {
 
   public onExit(): void {
     console.log('Exiting Game UI');
-    // Show cursor, disable pointer lock, etc.
     document.body.style.cursor = 'default';
   }
 
